@@ -72,8 +72,7 @@ function seedDatabase(): void {
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
     );
 
-    // Historical income (2 months ago, 1 month ago) - manual entries, separate from the
-    // recurring rules below which take over generating them going forward.
+    // past couple months, logged by hand - the recurring rules below take over from here
     for (const monthsAgo of [2, 1]) {
       insertTx.run(
         "income",
@@ -156,7 +155,7 @@ function seedDatabase(): void {
         null,
         categories.subscriptions,
       );
-      // Card payment: transfer from Checking to Chase Freedom
+      // paying down the card
       insertTx.run(
         "transfer",
         300,
@@ -166,7 +165,7 @@ function seedDatabase(): void {
         accounts.chase,
         null,
       );
-      // Savings transfer toward the Car Fund goal
+      // chipping away at the car fund
       insertTx.run(
         "transfer",
         200,
@@ -178,8 +177,8 @@ function seedDatabase(): void {
       );
     }
 
-    // A one-off freelance income to add a second (smaller) income source for the
-    // income-diversification insight, plus a couple of current-month transactions.
+    // second income source so the diversification insight has something to flag,
+    // plus a few current-month transactions
     insertTx.run(
       "income",
       150,
@@ -237,7 +236,7 @@ function seedDatabase(): void {
     insertBudget.run(categories.transportation, currentMonth, 120);
     insertBudget.run(categories.textbooks, currentMonth, 200);
 
-    // Recurring rules due "today" so the scheduler visibly generates transactions on first run
+    // due today so the scheduler actually fires on first run
     const insertRecurring = db.prepare(
       `INSERT INTO recurring_rules (name, type, amount, account_id, category_id, frequency, interval_count, start_date, next_due_date, end_date, active)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -328,8 +327,7 @@ function seedDatabase(): void {
     const targetDate = format(subMonths(new Date(), -12), "yyyy-MM-dd");
     insertGoal.run("Buy a car", 7000, targetDate, accounts.carFund);
 
-    // Credit card payment history: mostly on-time, one late, to give the credit
-    // health score real data to work with.
+    // mostly on-time, one late - gives the credit score something real to chew on
     const insertPayment = db.prepare(
       `INSERT INTO credit_card_payments (account_id, statement_month, paid_on_time) VALUES (?, ?, ?)`,
     );

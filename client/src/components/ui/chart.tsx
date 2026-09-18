@@ -89,9 +89,8 @@ const ChartTooltipContent = React.forwardRef<
         )}
         <div className="grid gap-1.5">
           {payload.map((item, i) => {
-            // Prefer a name-based match (pie slices, where every item shares
-            // the same dataKey but a distinct name/category) over dataKey
-            // (line/bar series, keyed by series name like "income").
+            // pie slices all share one dataKey but have distinct names, so try
+            // name first; line/bar series are the opposite (dataKey = series name)
             const nameKey = item.name !== undefined ? String(item.name) : undefined;
             const dataKeyKey = item.dataKey !== undefined ? String(item.dataKey) : undefined;
             const key = nameKey && config[nameKey] ? nameKey : (dataKeyKey ?? nameKey ?? "value");

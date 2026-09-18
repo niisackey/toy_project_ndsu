@@ -26,11 +26,9 @@ function advance(dateStr: string, frequency: RecurringFrequency, intervalCount: 
   return format(next, "yyyy-MM-dd");
 }
 
-/**
- * Generates any transactions for recurring rules whose next_due_date has
- * passed, catching up on all missed occurrences. Safe to call repeatedly
- * (idempotent per due date) and safe if the server was off for a while.
- */
+// catches up anything past its next_due_date - generates every missed
+// occurrence, not just the latest one. fine to call repeatedly or after
+// the server's been down a while.
 export function runDueRules(today: string = format(new Date(), "yyyy-MM-dd")): number {
   const rules = db
     .prepare(`SELECT * FROM recurring_rules WHERE active = 1 AND next_due_date <= ?`)

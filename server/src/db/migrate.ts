@@ -16,10 +16,9 @@ export function migrate(): void {
   const schema = fs.readFileSync(schemaPath, "utf-8");
   db.exec(schema);
 
-  // Additive migrations for databases created before these columns existed.
-  // (SQLite can't loosen a CHECK constraint via ALTER TABLE - the
-  // recurring_rules.frequency CHECK gaining 'semesterly'/'yearly' only takes
-  // effect on a freshly created table, i.e. a fresh server/data/*.sqlite.)
+  // patches in columns for dbs created before they existed. doesn't help with
+  // the frequency CHECK though - sqlite can't loosen those via ALTER TABLE,
+  // so semesterly/yearly only work on a freshly created server/data/*.sqlite
   ensureColumn("accounts", "statement_closing_day", "INTEGER");
   ensureColumn("accounts", "payment_due_day", "INTEGER");
 }

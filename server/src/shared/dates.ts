@@ -1,10 +1,7 @@
 import { addMonths, format, getDaysInMonth, parseISO, setDate } from "date-fns";
 
-/**
- * Given a day-of-month (1-28) and a reference date, returns the next date
- * (today or later) that falls on that day-of-month, as "yyyy-MM-dd". Clamps
- * to the last day of a month if that month is shorter than requested.
- */
+// next date >= `from` that falls on the given day-of-month, as yyyy-MM-dd.
+// clamps to the last day of the month if it's shorter than `day`.
 export function nextOccurrenceOfDay(day: number, from: Date = new Date()): string {
   const clampedThisMonth = Math.min(day, getDaysInMonth(from));
   let candidate = setDate(from, clampedThisMonth);
@@ -20,10 +17,8 @@ export function nextOccurrenceOfDay(day: number, from: Date = new Date()): strin
 }
 
 export function daysUntil(dateStr: string, from: Date = new Date()): number {
-  // parseISO (not `new Date(...)`) so a date-only string like "2026-09-17" is
-  // read as local midnight, matching how `from` is normalized below - the
-  // native Date constructor instead reads date-only strings as UTC midnight,
-  // which silently shifts the result by a day in most US timezones.
+  // parseISO, not new Date() - new Date("2026-09-17") parses as UTC midnight
+  // and rolls back a day once we zero the local hours below (bit me once already)
   const target = parseISO(dateStr);
   target.setHours(0, 0, 0, 0);
   const today = new Date(from);

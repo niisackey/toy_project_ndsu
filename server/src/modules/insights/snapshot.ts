@@ -7,11 +7,8 @@ import { listRecurringRules } from "../recurring/recurring.service";
 import { spendingByCategory } from "../reports/reports.service";
 import { incomeBySourceLast3Months, savingsRateLast3Months } from "./rules";
 
-/**
- * A compact, LLM-friendly snapshot of the user's current financial state -
- * everything the AI insights prompt needs, with no PII beyond what the user
- * entered themselves (account/category names, amounts, dates).
- */
+// everything the insights prompt needs and nothing else - just what the user
+// already typed in (account/category names, amounts, dates)
 export function buildFinancialSnapshot() {
   const today = format(new Date(), "yyyy-MM-dd");
   const currentMonth = format(new Date(), "yyyy-MM");

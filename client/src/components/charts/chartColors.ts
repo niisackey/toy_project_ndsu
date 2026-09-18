@@ -1,5 +1,4 @@
-// Validated categorical order from the design system's default palette
-// (references/palette.md) - fixed order, never cycled or re-sorted by rank.
+// order matches the validated default palette (references/palette.md) - don't reorder/cycle it
 export const CATEGORICAL = [
   "#2a78d6", // blue
   "#eb6834", // orange
@@ -28,9 +27,7 @@ export function utilizationStatusColor(pct: number): string {
   return STATUS.critical;
 }
 
-// Tailwind-class equivalent of utilizationStatusColor, for elements styled
-// with Tailwind utilities (e.g. a shadcn Progress indicator) rather than an
-// inline hex color.
+// same thresholds as utilizationStatusColor but as a Tailwind class - for things like the Progress bar
 export function utilizationBarClass(pct: number): string {
   if (pct <= 30) return "bg-emerald-500";
   if (pct <= 50) return "bg-amber-500";
