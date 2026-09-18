@@ -1,22 +1,33 @@
 # Student Finance Coach
 
+## Project description
+
 A personal finance tracker built for the specific reality of a grad student on a
 stipend with a couple of credit cards: track accounts and spending, budget by
 category, set a savings goal, and get plain-language guidance on using credit
-cards to build a healthy credit history - all in one small, self-hosted app.
+cards to build a healthy credit history - all in one small, self-hosted web app
+(Node.js/TypeScript + Express API, React/TypeScript frontend, SQLite storage).
+It implements seven major features - see [Features](#features) below - well
+past the three required for this assignment.
 
-Built as a toy project using AI coding tools, with an original implementation
-inspired by, and comparable in scope to, the open-source project
-[Firefly III](https://github.com/firefly-iii/firefly-iii)
-(github.com/firefly-iii/firefly-iii) - no code was copied from it; see
-[Comparison to Firefly III](#comparison-to-firefly-iii) below for what's
-implemented, what's deliberately left out, and what's original to this project.
+## Open-source reference project
+
+**[Firefly III](https://github.com/firefly-iii/firefly-iii)**
+- GitHub: https://github.com/firefly-iii/firefly-iii
+- A popular, mature self-hosted personal finance manager (accounts, budgets,
+  recurring transactions, reports, "piggy banks" for goals).
+
+This project is an **original implementation**, comparable in scope to Firefly
+III but not copied from it - no code, schema, or assets were reused. See
+[Comparison to Firefly III](#comparison-to-firefly-iii) below for a detailed
+breakdown of what's implemented, what's deliberately left out, and what's
+original to this project.
 
 ## AI tools used
 
-This project's entire implementation - backend, frontend, database schema,
-and this README - was written using **[Claude Code](https://claude.com/claude-code)**
-(Anthropic's agentic CLI coding tool), driven by conversational prompts
+**[Claude Code](https://claude.com/claude-code)** (Anthropic's agentic CLI
+coding tool) was used for the entire implementation - backend, frontend,
+database schema, and this README - driven by conversational prompts
 describing the desired features rather than hand-written code.
 
 ## Features
