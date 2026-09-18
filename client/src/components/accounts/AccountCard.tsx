@@ -7,14 +7,17 @@ import { Card, CardContent } from "../ui/card";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Progress } from "../ui/progress";
+import { MakePaymentDialog } from "./MakePaymentDialog";
 import type { Account } from "../../types";
 
 export function AccountCard({
   account,
+  accounts,
   onDelete,
   onUpdated,
 }: {
   account: Account;
+  accounts: Account[];
   onDelete: (id: number) => void;
   onUpdated: () => Promise<void>;
 }) {
@@ -178,7 +181,10 @@ export function AccountCard({
             )}
           </>
         )}
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 flex flex-wrap gap-2">
+          {account.type === "credit_card" && (
+            <MakePaymentDialog card={account} accounts={accounts} onPaid={onUpdated} />
+          )}
           <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
             <Pencil size={14} /> Edit
           </Button>

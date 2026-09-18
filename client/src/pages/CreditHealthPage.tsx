@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { Calendar, Check, Clock } from "lucide-react";
 import { logCardPayment } from "../api/credit";
+import { MakePaymentDialog } from "../components/accounts/MakePaymentDialog";
 import { PageLayout } from "../components/layout/PageLayout";
 import { STATUS, utilizationBarClass } from "../components/charts/chartColors";
 import { Badge } from "../components/ui/badge";
@@ -35,8 +36,12 @@ function dueLabel(days: number): string {
 
 export default function CreditHealthPage() {
   const { health, loading, refresh } = useCreditHealth();
-  const { accounts } = useAccounts();
+  const { accounts, refresh: refreshAccounts } = useAccounts();
   const cards = accounts.filter((a) => a.type === "credit_card");
+
+  async function refreshAll() {
+    await Promise.all([refresh(), refreshAccounts()]);
+  }
 
   const [accountId, setAccountId] = useState<number | "">("");
   const [statementMonth, setStatementMonth] = useState(format(new Date(), "yyyy-MM"));
@@ -135,6 +140,11 @@ export default function CreditHealthPage() {
                         <span className="text-sm text-muted-foreground">
                           Statement closes {dueLabel(closingDays)} ({account.nextStatementClosingDate})
                         </span>
+                      </div>
+                    )}
+                    {account && (
+                      <div className="mt-3">
+                        <MakePaymentDialog card={account} accounts={accounts} onPaid={refreshAll} />
                       </div>
                     )}
                   </CardContent>
