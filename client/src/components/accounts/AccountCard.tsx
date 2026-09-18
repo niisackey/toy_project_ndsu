@@ -27,22 +27,18 @@ export function AccountCard({
   const [creditLimit, setCreditLimit] = useState(
     account.creditLimit != null ? String(account.creditLimit) : "",
   );
-  const [statementClosingDay, setStatementClosingDay] = useState(
-    account.statementClosingDay != null ? String(account.statementClosingDay) : "",
+  const [nextStatementClosingDate, setNextStatementClosingDate] = useState(
+    account.nextStatementClosingDate ?? "",
   );
-  const [paymentDueDay, setPaymentDueDay] = useState(
-    account.paymentDueDay != null ? String(account.paymentDueDay) : "",
-  );
+  const [nextPaymentDueDate, setNextPaymentDueDate] = useState(account.nextPaymentDueDate ?? "");
   const [submitting, setSubmitting] = useState(false);
 
   function resetFields() {
     setName(account.name);
     setInitialBalance(String(account.initialBalance));
     setCreditLimit(account.creditLimit != null ? String(account.creditLimit) : "");
-    setStatementClosingDay(
-      account.statementClosingDay != null ? String(account.statementClosingDay) : "",
-    );
-    setPaymentDueDay(account.paymentDueDay != null ? String(account.paymentDueDay) : "");
+    setNextStatementClosingDate(account.nextStatementClosingDate ?? "");
+    setNextPaymentDueDate(account.nextPaymentDueDate ?? "");
   }
 
   async function handleSave(e: FormEvent) {
@@ -53,12 +49,12 @@ export function AccountCard({
         name,
         initialBalance: Number(initialBalance),
         creditLimit: account.type === "credit_card" ? Number(creditLimit) || 0 : null,
-        statementClosingDay:
-          account.type === "credit_card" && statementClosingDay
-            ? Number(statementClosingDay)
+        nextStatementClosingDate:
+          account.type === "credit_card" && nextStatementClosingDate
+            ? nextStatementClosingDate
             : null,
-        paymentDueDay:
-          account.type === "credit_card" && paymentDueDay ? Number(paymentDueDay) : null,
+        nextPaymentDueDate:
+          account.type === "credit_card" && nextPaymentDueDate ? nextPaymentDueDate : null,
       });
       setEditing(false);
       await onUpdated();
@@ -112,27 +108,21 @@ export function AccountCard({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor={`closing-${account.id}`}>Statement closing day</Label>
+                  <Label htmlFor={`closing-${account.id}`}>Next statement closing date</Label>
                   <Input
                     id={`closing-${account.id}`}
-                    type="number"
-                    min={1}
-                    max={28}
-                    placeholder="e.g. 20"
-                    value={statementClosingDay}
-                    onChange={(e) => setStatementClosingDay(e.target.value)}
+                    type="date"
+                    value={nextStatementClosingDate}
+                    onChange={(e) => setNextStatementClosingDate(e.target.value)}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor={`due-${account.id}`}>Payment due day</Label>
+                  <Label htmlFor={`due-${account.id}`}>Next payment due date</Label>
                   <Input
                     id={`due-${account.id}`}
-                    type="number"
-                    min={1}
-                    max={28}
-                    placeholder="e.g. 15"
-                    value={paymentDueDay}
-                    onChange={(e) => setPaymentDueDay(e.target.value)}
+                    type="date"
+                    value={nextPaymentDueDate}
+                    onChange={(e) => setNextPaymentDueDate(e.target.value)}
                   />
                 </div>
               </>

@@ -6,8 +6,8 @@ export interface AccountInput {
   type: AccountType;
   initialBalance: number;
   creditLimit?: number | null;
-  statementClosingDay?: number | null;
-  paymentDueDay?: number | null;
+  nextStatementClosingDate?: string | null;
+  nextPaymentDueDate?: string | null;
 }
 
 export async function fetchAccounts(): Promise<Account[]> {

@@ -10,8 +10,16 @@ const accountSchema = z.object({
   type: z.enum(["checking", "cash", "savings", "credit_card"]),
   initialBalance: z.number(),
   creditLimit: z.number().positive().nullable().optional(),
-  statementClosingDay: z.number().int().min(1).max(28).nullable().optional(),
-  paymentDueDay: z.number().int().min(1).max(28).nullable().optional(),
+  nextStatementClosingDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "must be YYYY-MM-DD")
+    .nullable()
+    .optional(),
+  nextPaymentDueDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "must be YYYY-MM-DD")
+    .nullable()
+    .optional(),
 });
 
 const accountUpdateSchema = accountSchema.partial();

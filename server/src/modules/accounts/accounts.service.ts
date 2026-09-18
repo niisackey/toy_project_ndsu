@@ -1,6 +1,6 @@
 import { db } from "../../db/connection";
 import { ConflictError, NotFoundError } from "../../shared/errors";
-import { nextOccurrenceOfDay } from "../../shared/dates";
+import { nextOccurrenceFromAnchor } from "../../shared/dates";
 import type { AccountDto, AccountRow, AccountType } from "./accounts.types";
 
 const NET_MOVEMENT_SQL = `
@@ -31,16 +31,12 @@ function toDto(row: AccountWithMovementRow): AccountDto {
     creditLimit: row.credit_limit,
     balance: Math.round(balance * 100) / 100,
     utilizationPct,
-    statementClosingDay: row.statement_closing_day,
-    paymentDueDay: row.payment_due_day,
-    nextStatementClosingDate:
-      row.type === "credit_card" && row.statement_closing_day
-        ? nextOccurrenceOfDay(row.statement_closing_day)
-        : null,
-    nextPaymentDueDate:
-      row.type === "credit_card" && row.payment_due_day
-        ? nextOccurrenceOfDay(row.payment_due_day)
-        : null,
+    nextStatementClosingDate: row.next_statement_closing_date
+      ? nextOccurrenceFromAnchor(row.next_statement_closing_date)
+      : null,
+    nextPaymentDueDate: row.next_payment_due_date
+      ? nextOccurrenceFromAnchor(row.next_payment_due_date)
+      : null,
     createdAt: row.created_at,
   };
 }
@@ -65,14 +61,14 @@ export interface CreateAccountInput {
   type: AccountType;
   initialBalance: number;
   creditLimit?: number | null;
-  statementClosingDay?: number | null;
-  paymentDueDay?: number | null;
+  nextStatementClosingDate?: string | null;
+  nextPaymentDueDate?: string | null;
 }
 
 export function createAccount(input: CreateAccountInput): AccountDto {
   const result = db
     .prepare(
-      `INSERT INTO accounts (name, type, initial_balance, credit_limit, statement_closing_day, payment_due_day)
+      `INSERT INTO accounts (name, type, initial_balance, credit_limit, next_statement_closing_date, next_payment_due_date)
        VALUES (?, ?, ?, ?, ?, ?)`,
     )
     .run(
@@ -80,8 +76,8 @@ export function createAccount(input: CreateAccountInput): AccountDto {
       input.type,
       input.initialBalance,
       input.creditLimit ?? null,
-      input.statementClosingDay ?? null,
-      input.paymentDueDay ?? null,
+      input.nextStatementClosingDate ?? null,
+      input.nextPaymentDueDate ?? null,
     );
   return getAccount(Number(result.lastInsertRowid));
 }
@@ -92,16 +88,18 @@ export function updateAccount(id: number, input: Partial<CreateAccountInput>): A
   const type = input.type ?? existing.type;
   const initialBalance = input.initialBalance ?? existing.initialBalance;
   const creditLimit = input.creditLimit !== undefined ? input.creditLimit : existing.creditLimit;
-  const statementClosingDay =
-    input.statementClosingDay !== undefined
-      ? input.statementClosingDay
-      : existing.statementClosingDay;
-  const paymentDueDay =
-    input.paymentDueDay !== undefined ? input.paymentDueDay : existing.paymentDueDay;
+  const nextStatementClosingDate =
+    input.nextStatementClosingDate !== undefined
+      ? input.nextStatementClosingDate
+      : existing.nextStatementClosingDate;
+  const nextPaymentDueDate =
+    input.nextPaymentDueDate !== undefined
+      ? input.nextPaymentDueDate
+      : existing.nextPaymentDueDate;
   db.prepare(
-    `UPDATE accounts SET name = ?, type = ?, initial_balance = ?, credit_limit = ?, statement_closing_day = ?, payment_due_day = ?
+    `UPDATE accounts SET name = ?, type = ?, initial_balance = ?, credit_limit = ?, next_statement_closing_date = ?, next_payment_due_date = ?
      WHERE id = ?`,
-  ).run(name, type, initialBalance, creditLimit, statementClosingDay, paymentDueDay, id);
+  ).run(name, type, initialBalance, creditLimit, nextStatementClosingDate, nextPaymentDueDate, id);
   return getAccount(id);
 }
 

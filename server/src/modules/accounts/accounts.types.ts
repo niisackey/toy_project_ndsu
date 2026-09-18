@@ -6,8 +6,8 @@ export interface AccountRow {
   type: AccountType;
   initial_balance: number;
   credit_limit: number | null;
-  statement_closing_day: number | null;
-  payment_due_day: number | null;
+  next_statement_closing_date: string | null;
+  next_payment_due_date: string | null;
   created_at: string;
 }
 
@@ -19,8 +19,6 @@ export interface AccountDto {
   creditLimit: number | null;
   balance: number;
   utilizationPct: number | null;
-  statementClosingDay: number | null;
-  paymentDueDay: number | null;
   nextStatementClosingDate: string | null;
   nextPaymentDueDate: string | null;
   createdAt: string;

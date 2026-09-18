@@ -4,8 +4,8 @@ CREATE TABLE IF NOT EXISTS accounts (
   type TEXT NOT NULL CHECK(type IN ('checking','cash','savings','credit_card')),
   initial_balance REAL NOT NULL DEFAULT 0,
   credit_limit REAL,
-  statement_closing_day INTEGER CHECK(statement_closing_day IS NULL OR (statement_closing_day BETWEEN 1 AND 28)),
-  payment_due_day INTEGER CHECK(payment_due_day IS NULL OR (payment_due_day BETWEEN 1 AND 28)),
+  next_statement_closing_date TEXT,
+  next_payment_due_date TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

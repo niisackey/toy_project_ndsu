@@ -16,6 +16,6 @@ export function migrate(): void {
   const schema = fs.readFileSync(schemaPath, "utf-8");
   db.exec(schema);
 
-  ensureColumn("accounts", "statement_closing_day", "INTEGER");
-  ensureColumn("accounts", "payment_due_day", "INTEGER");
+  ensureColumn("accounts", "next_statement_closing_date", "TEXT");
+  ensureColumn("accounts", "next_payment_due_date", "TEXT");
 }

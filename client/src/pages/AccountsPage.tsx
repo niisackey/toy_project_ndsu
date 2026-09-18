@@ -32,8 +32,8 @@ export default function AccountsPage() {
   const [type, setType] = useState<AccountType>("checking");
   const [initialBalance, setInitialBalance] = useState("0");
   const [creditLimit, setCreditLimit] = useState("");
-  const [statementClosingDay, setStatementClosingDay] = useState("");
-  const [paymentDueDay, setPaymentDueDay] = useState("");
+  const [nextStatementClosingDate, setNextStatementClosingDate] = useState("");
+  const [nextPaymentDueDate, setNextPaymentDueDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   function resetForm() {
@@ -41,8 +41,8 @@ export default function AccountsPage() {
     setType("checking");
     setInitialBalance("0");
     setCreditLimit("");
-    setStatementClosingDay("");
-    setPaymentDueDay("");
+    setNextStatementClosingDate("");
+    setNextPaymentDueDate("");
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -54,9 +54,10 @@ export default function AccountsPage() {
         type,
         initialBalance: Number(initialBalance),
         creditLimit: type === "credit_card" ? Number(creditLimit) || 0 : null,
-        statementClosingDay:
-          type === "credit_card" && statementClosingDay ? Number(statementClosingDay) : null,
-        paymentDueDay: type === "credit_card" && paymentDueDay ? Number(paymentDueDay) : null,
+        nextStatementClosingDate:
+          type === "credit_card" && nextStatementClosingDate ? nextStatementClosingDate : null,
+        nextPaymentDueDate:
+          type === "credit_card" && nextPaymentDueDate ? nextPaymentDueDate : null,
       });
       resetForm();
       setOpen(false);
@@ -137,28 +138,26 @@ export default function AccountsPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="statementClosingDay">Statement closing day</Label>
+                    <Label htmlFor="nextStatementClosingDate">Next statement closing date</Label>
                     <Input
-                      id="statementClosingDay"
-                      type="number"
-                      min={1}
-                      max={28}
-                      placeholder="e.g. 20"
-                      value={statementClosingDay}
-                      onChange={(e) => setStatementClosingDay(e.target.value)}
+                      id="nextStatementClosingDate"
+                      type="date"
+                      value={nextStatementClosingDate}
+                      onChange={(e) => setNextStatementClosingDate(e.target.value)}
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="paymentDueDay">Payment due day</Label>
+                    <Label htmlFor="nextPaymentDueDate">Next payment due date</Label>
                     <Input
-                      id="paymentDueDay"
-                      type="number"
-                      min={1}
-                      max={28}
-                      placeholder="e.g. 15"
-                      value={paymentDueDay}
-                      onChange={(e) => setPaymentDueDay(e.target.value)}
+                      id="nextPaymentDueDate"
+                      type="date"
+                      value={nextPaymentDueDate}
+                      onChange={(e) => setNextPaymentDueDate(e.target.value)}
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Use the actual date from your statement - it can be weeks or months out,
+                      the app rolls it forward automatically once it passes.
+                    </p>
                   </div>
                 </>
               )}

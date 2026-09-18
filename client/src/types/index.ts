@@ -8,8 +8,6 @@ export interface Account {
   creditLimit: number | null;
   balance: number;
   utilizationPct: number | null;
-  statementClosingDay: number | null;
-  paymentDueDay: number | null;
   nextStatementClosingDate: string | null;
   nextPaymentDueDate: string | null;
   createdAt: string;

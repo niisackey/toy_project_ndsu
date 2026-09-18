@@ -35,7 +35,7 @@ function seedDatabase(): void {
     clearAll();
 
     const insertAccount = db.prepare(
-      `INSERT INTO accounts (name, type, initial_balance, credit_limit, statement_closing_day, payment_due_day)
+      `INSERT INTO accounts (name, type, initial_balance, credit_limit, next_statement_closing_date, next_payment_due_date)
        VALUES (?, ?, ?, ?, ?, ?)`,
     );
     const accounts = {
@@ -47,10 +47,24 @@ function seedDatabase(): void {
         insertAccount.run("Car Fund", "savings", 300, null, null, null).lastInsertRowid,
       ),
       chase: Number(
-        insertAccount.run("Chase Freedom", "credit_card", 0, 2000, 22, 17).lastInsertRowid,
+        insertAccount.run(
+          "Chase Freedom",
+          "credit_card",
+          0,
+          2000,
+          daysFromNow(5),
+          today(),
+        ).lastInsertRowid,
       ),
       discover: Number(
-        insertAccount.run("Discover it", "credit_card", 0, 1500, 5, 28).lastInsertRowid,
+        insertAccount.run(
+          "Discover it",
+          "credit_card",
+          0,
+          1500,
+          daysFromNow(18),
+          daysFromNow(11),
+        ).lastInsertRowid,
       ),
     };
 
