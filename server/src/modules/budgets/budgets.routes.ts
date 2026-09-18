@@ -9,6 +9,7 @@ const budgetSchema = z.object({
   categoryId: z.number().int(),
   month: z.string().regex(/^\d{4}-\d{2}$/, "month must be YYYY-MM"),
   limitAmount: z.number().positive(),
+  months: z.number().int().min(1).max(24).optional(),
 });
 
 budgetsRouter.get(
@@ -22,7 +23,11 @@ budgetsRouter.get(
 budgetsRouter.post(
   "/",
   asyncHandler(async (req, res) => {
-    const input = budgetSchema.parse(req.body);
+    const { months, ...input } = budgetSchema.parse(req.body);
+    if (months && months > 1) {
+      res.status(201).json(budgetsService.createBudgetSeries(input, months));
+      return;
+    }
     res.status(201).json(budgetsService.createBudget(input));
   }),
 );

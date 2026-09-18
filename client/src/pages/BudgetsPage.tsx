@@ -18,6 +18,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Progress } from "../components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Switch } from "../components/ui/switch";
 import { useBudgets } from "../hooks/useBudgets";
 import { useCategories } from "../hooks/useCategories";
 import { utilizationBarClass } from "../components/charts/chartColors";
@@ -30,15 +31,25 @@ export default function BudgetsPage() {
   const [open, setOpen] = useState(false);
   const [categoryId, setCategoryId] = useState<number | "">("");
   const [limitAmount, setLimitAmount] = useState("");
+  const [isYearly, setIsYearly] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const enteredAmount = Number(limitAmount) || 0;
+  const monthlyAmount = isYearly ? Math.round((enteredAmount / 12) * 100) / 100 : enteredAmount;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!categoryId) return;
     setSubmitting(true);
     try {
-      await createBudget({ categoryId: Number(categoryId), month, limitAmount: Number(limitAmount) });
+      await createBudget({
+        categoryId: Number(categoryId),
+        month,
+        limitAmount: monthlyAmount,
+        months: isYearly ? 12 : 1,
+      });
       setLimitAmount("");
+      setIsYearly(false);
       setOpen(false);
       await refresh();
     } finally {
@@ -82,8 +93,14 @@ export default function BudgetsPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="flex items-center justify-between rounded-md border border-border/60 px-3 py-2.5">
+                <Label htmlFor="isYearly" className="cursor-pointer text-sm text-foreground">
+                  This is a yearly amount
+                </Label>
+                <Switch id="isYearly" checked={isYearly} onCheckedChange={setIsYearly} />
+              </div>
               <div className="space-y-1.5">
-                <Label htmlFor="limit">Monthly limit</Label>
+                <Label htmlFor="limit">{isYearly ? "Yearly amount" : "Monthly limit"}</Label>
                 <Input
                   id="limit"
                   type="number"
@@ -92,10 +109,16 @@ export default function BudgetsPage() {
                   value={limitAmount}
                   onChange={(e) => setLimitAmount(e.target.value)}
                 />
+                {isYearly && enteredAmount > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    = ${monthlyAmount.toFixed(2)}/month, set for {month} through the following 11
+                    months.
+                  </p>
+                )}
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={submitting}>
-                  <Plus size={16} /> Set budget
+                  <Plus size={16} /> {isYearly ? "Set 12-month budget" : "Set budget"}
                 </Button>
               </DialogFooter>
             </form>

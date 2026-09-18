@@ -5,6 +5,7 @@ export interface BudgetInput {
   categoryId: number;
   month: string;
   limitAmount: number;
+  months?: number;
 }
 
 export async function fetchBudgets(month?: string): Promise<Budget[]> {
@@ -12,8 +13,8 @@ export async function fetchBudgets(month?: string): Promise<Budget[]> {
   return data;
 }
 
-export async function createBudget(input: BudgetInput): Promise<Budget> {
-  const { data } = await apiClient.post<Budget>("/budgets", input);
+export async function createBudget(input: BudgetInput): Promise<Budget | Budget[]> {
+  const { data } = await apiClient.post<Budget | Budget[]>("/budgets", input);
   return data;
 }
 

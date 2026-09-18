@@ -1,3 +1,4 @@
+import { addMonths, format, parseISO } from "date-fns";
 import { db } from "../../db/connection";
 import { NotFoundError } from "../../shared/errors";
 
@@ -60,10 +61,26 @@ export interface CreateBudgetInput {
 }
 
 export function createBudget(input: CreateBudgetInput): BudgetDto {
-  const result = db
-    .prepare(`INSERT INTO budgets (category_id, month, limit_amount) VALUES (?, ?, ?)`)
-    .run(input.categoryId, input.month, input.limitAmount);
-  return getBudget(Number(result.lastInsertRowid));
+  db.prepare(
+    `INSERT INTO budgets (category_id, month, limit_amount) VALUES (?, ?, ?)
+     ON CONFLICT(category_id, month) DO UPDATE SET limit_amount = excluded.limit_amount`,
+  ).run(input.categoryId, input.month, input.limitAmount);
+  const row = db
+    .prepare(`${SELECT_WITH_SPENT} WHERE b.category_id = ? AND b.month = ?`)
+    .get(input.categoryId, input.month) as unknown as BudgetRow;
+  return toDto(row);
+}
+
+// splits one limit across `months` consecutive months starting at
+// input.month (e.g. a $10,000/year rent budget entered as ~$833/month x 12) -
+// each month is its own row, upserted so re-running is harmless
+export function createBudgetSeries(input: CreateBudgetInput, months: number): BudgetDto[] {
+  const created: BudgetDto[] = [];
+  for (let i = 0; i < months; i++) {
+    const month = format(addMonths(parseISO(`${input.month}-01`), i), "yyyy-MM");
+    created.push(createBudget({ ...input, month }));
+  }
+  return created;
 }
 
 export function updateBudget(id: number, input: Partial<CreateBudgetInput>): BudgetDto {
