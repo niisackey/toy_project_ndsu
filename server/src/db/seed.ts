@@ -72,7 +72,6 @@ function seedDatabase(): void {
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
     );
 
-    // past couple months, logged by hand - the recurring rules below take over from here
     for (const monthsAgo of [2, 1]) {
       insertTx.run(
         "income",
@@ -155,7 +154,6 @@ function seedDatabase(): void {
         null,
         categories.subscriptions,
       );
-      // paying down the card
       insertTx.run(
         "transfer",
         300,
@@ -165,7 +163,6 @@ function seedDatabase(): void {
         accounts.chase,
         null,
       );
-      // chipping away at the car fund
       insertTx.run(
         "transfer",
         200,
@@ -177,8 +174,6 @@ function seedDatabase(): void {
       );
     }
 
-    // second income source so the diversification insight has something to flag,
-    // plus a few current-month transactions
     insertTx.run(
       "income",
       150,
@@ -225,7 +220,6 @@ function seedDatabase(): void {
       categories.transportation,
     );
 
-    // Budgets for the current month
     const insertBudget = db.prepare(
       `INSERT INTO budgets (category_id, month, limit_amount) VALUES (?, ?, ?)`,
     );
@@ -236,7 +230,6 @@ function seedDatabase(): void {
     insertBudget.run(categories.transportation, currentMonth, 120);
     insertBudget.run(categories.textbooks, currentMonth, 200);
 
-    // due today so the scheduler actually fires on first run
     const insertRecurring = db.prepare(
       `INSERT INTO recurring_rules (name, type, amount, account_id, category_id, frequency, interval_count, start_date, next_due_date, end_date, active)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -320,14 +313,12 @@ function seedDatabase(): void {
       1,
     );
 
-    // Savings goal: buy a car
     const insertGoal = db.prepare(
       `INSERT INTO goals (name, target_amount, target_date, linked_account_id) VALUES (?, ?, ?, ?)`,
     );
     const targetDate = format(subMonths(new Date(), -12), "yyyy-MM-dd");
     insertGoal.run("Buy a car", 7000, targetDate, accounts.carFund);
 
-    // mostly on-time, one late - gives the credit score something real to chew on
     const insertPayment = db.prepare(
       `INSERT INTO credit_card_payments (account_id, statement_month, paid_on_time) VALUES (?, ?, ?)`,
     );

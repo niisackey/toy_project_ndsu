@@ -14,8 +14,7 @@ export function isLlmConfigured(): boolean {
 
 function getClient(): Anthropic {
   if (!client) {
-    // org-level keys (not tied to one workspace) 400 without this header.
-    // normal workspace-scoped keys from the console don't need it.
+    // only needed for org-level keys - they 400 without this header
     const workspaceId = process.env.ANTHROPIC_WORKSPACE_ID;
     client = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY,

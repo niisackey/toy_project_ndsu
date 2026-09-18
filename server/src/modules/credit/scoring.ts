@@ -74,7 +74,6 @@ export function computeCreditHealth(): CreditHealthResult {
 
   const hasCreditCards = cards.length > 0;
 
-  // Payment history factor
   const paymentRows = db
     .prepare(
       `SELECT paid_on_time FROM credit_card_payments WHERE account_id IN (${cards.map(() => "?").join(",") || "NULL"})`,
@@ -86,20 +85,17 @@ export function computeCreditHealth(): CreditHealthResult {
       : 70;
   const paymentHistoryScore = paymentRows.length > 0 ? onTimePct : 70;
 
-  // Utilization factor
   const avgUtilization =
     cardUtilization.length > 0
       ? cardUtilization.reduce((sum, c) => sum + c.utilizationPct, 0) / cardUtilization.length
       : 0;
   const utilizationScore = hasCreditCards ? utilizationFactorScore(avgUtilization) : 70;
 
-  // Credit age factor
   const now = new Date();
   const cardAges = cards.map((c) => differenceInMonths(now, new Date(c.createdAt)));
   const avgAgeMonths = cardAges.length > 0 ? cardAges.reduce((s, a) => s + a, 0) / cardAges.length : 0;
   const ageScore = hasCreditCards ? ageFactorScore(avgAgeMonths) : 40;
 
-  // Credit mix factor
   const hasNonCreditAccount = accounts.some((a) => a.type !== "credit_card");
   let mixScore = 50;
   if (hasCreditCards) mixScore += 10;

@@ -71,9 +71,6 @@ export function createBudget(input: CreateBudgetInput): BudgetDto {
   return toDto(row);
 }
 
-// splits one limit across `months` consecutive months starting at
-// input.month (e.g. a $10,000/year rent budget entered as ~$833/month x 12) -
-// each month is its own row, upserted so re-running is harmless
 export function createBudgetSeries(input: CreateBudgetInput, months: number): BudgetDto[] {
   const created: BudgetDto[] = [];
   for (let i = 0; i < months; i++) {

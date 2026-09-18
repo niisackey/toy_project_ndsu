@@ -7,8 +7,6 @@ import { listRecurringRules } from "../recurring/recurring.service";
 import { spendingByCategory } from "../reports/reports.service";
 import { incomeBySourceLast3Months, savingsRateLast3Months } from "./rules";
 
-// everything the insights prompt needs and nothing else - just what the user
-// already typed in (account/category names, amounts, dates)
 export function buildFinancialSnapshot() {
   const today = format(new Date(), "yyyy-MM-dd");
   const currentMonth = format(new Date(), "yyyy-MM");

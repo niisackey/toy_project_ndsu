@@ -5,7 +5,6 @@ import { migrate } from "./db/migrate";
 import { seedIfEmpty } from "./db/seed";
 import { startRecurringScheduler } from "./modules/recurring/recurring.scheduler";
 
-// go up to repo root for .env - works from src/ (tsx) or dist/ either way
 dotenv.config({ path: path.join(__dirname, "..", "..", ".env") });
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
