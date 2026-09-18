@@ -8,8 +8,8 @@ import { STATUS, utilizationBarClass } from "../components/charts/chartColors";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { MonthPicker } from "../components/ui/month-picker";
 import { Progress } from "../components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { useAccounts } from "../hooks/useAccounts";
@@ -177,12 +177,7 @@ export default function CreditHealthPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="statementMonth">Statement month</Label>
-                <Input
-                  id="statementMonth"
-                  type="month"
-                  value={statementMonth}
-                  onChange={(e) => setStatementMonth(e.target.value)}
-                />
+                <MonthPicker id="statementMonth" value={statementMonth} onChange={setStatementMonth} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="paidOnTime">Paid on time?</Label>

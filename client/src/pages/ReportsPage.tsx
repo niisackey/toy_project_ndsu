@@ -5,8 +5,8 @@ import { TrendLineChart } from "../components/charts/TrendLineChart";
 import { BalanceBarChart } from "../components/charts/BalanceBarChart";
 import { PageLayout } from "../components/layout/PageLayout";
 import { Card, CardContent } from "../components/ui/card";
-import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { MonthPicker } from "../components/ui/month-picker";
 import { fetchBalancesOverview, fetchIncomeVsExpense, fetchSpendingByCategory } from "../api/reports";
 import type { BalancesOverviewEntry, IncomeVsExpenseEntry, SpendingByCategoryEntry } from "../types";
 
@@ -28,9 +28,9 @@ export default function ReportsPage() {
   return (
     <PageLayout title="Reports" subtitle="Where your money comes from and where it goes">
       <div className="mb-8">
-        <div className="mb-3 max-w-[220px] space-y-1.5">
+        <div className="mb-3 max-w-[260px] space-y-1.5">
           <Label htmlFor="month">Spending by category - month</Label>
-          <Input id="month" type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
+          <MonthPicker id="month" value={month} onChange={setMonth} />
         </div>
         <Card>
           <CardContent className="pt-5">

@@ -16,6 +16,7 @@ import {
 } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { MonthPicker } from "../components/ui/month-picker";
 import { Progress } from "../components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Switch } from "../components/ui/switch";
@@ -126,9 +127,9 @@ export default function BudgetsPage() {
         </Dialog>
       }
     >
-      <div className="mb-5 max-w-[220px] space-y-1.5">
+      <div className="mb-5 max-w-[260px] space-y-1.5">
         <Label htmlFor="month">Month</Label>
-        <Input id="month" type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
+        <MonthPicker id="month" value={month} onChange={setMonth} />
       </div>
 
       {loading ? (
