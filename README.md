@@ -26,9 +26,35 @@ original to this project.
 ## AI tools used
 
 **[Claude Code](https://claude.com/claude-code)** (Anthropic's agentic CLI
-coding tool) was used for the entire implementation - backend, frontend,
-database schema, and this README - driven by conversational prompts
-describing the desired features rather than hand-written code.
+coding tool) wrote the code, but the design and direction were mine. This was
+a directed, iterative build, not a single "build me an app" prompt:
+
+- I picked the domain and the target user (a grad student managing a stipend
+  and their first credit cards) and the specific pain points to solve for -
+  not a generic budgeting app, but one with student-specific needs like
+  semester/annual fees, biweekly work-study paychecks, and credit-building
+  guidance.
+- I specified each major feature myself and refined them across multiple
+  rounds: adding credit card statement-closing/due-date tracking after
+  reviewing the first pass, requesting biweekly/daily recurring frequencies
+  for realistic pay schedules, and defining exactly how the AI-insights
+  feature should behave (grounded in real account data, with a deterministic
+  rule-based fallback so the app never depends on an external API to work).
+- I made the product/architecture calls: no Docker, no ORM, keeping the
+  stack minimal and self-contained; SQLite over a hosted database; the
+  specific scope boundary against Firefly III (what to include vs.
+  deliberately leave out).
+- I rejected the first UI pass as too plain, directed the redesign toward a
+  sidebar layout, and then specifically requested a shadcn/ui-based rebuild
+  (Tailwind + Radix primitives) and further design fixes (chart styling, the
+  Insights section's look) after reviewing what Claude Code produced.
+- I ran and tested the app myself at each stage, catching real issues along
+  the way (a timezone bug in due-date calculations, an orphaned dev-server
+  process masking a fix, an Anthropic API key workspace-scoping error) that
+  Claude Code diagnosed and fixed once I reported the symptoms.
+
+In short: Claude Code is the pen; the requirements, feature set, UX
+direction, and debugging feedback loop were mine.
 
 ## Features
 
