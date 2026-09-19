@@ -1,134 +1,84 @@
 # Student Finance Coach
 
-## Project description
-
-A personal finance tracker built for the specific reality of a grad student on a
-stipend with a couple of credit cards: track accounts and spending, budget by
-category, set a savings goal, and get plain-language guidance on using credit
-cards to build a healthy credit history - all in one small, self-hosted web app
-(Node.js/TypeScript + Express API, React/TypeScript frontend, SQLite storage).
-It implements seven major features - see [Features](#features) below - well
-past the three required for this assignment.
+A personal finance tracker built for a grad student on a stipend with a
+couple of credit cards: track accounts and spending, budget by category, set
+a savings goal, and get guidance on using credit cards to build a healthy
+credit history. Self-hosted, single-user, runs locally.
 
 ## Open-source reference project
 
-**[Firefly III](https://github.com/firefly-iii/firefly-iii)**
-- GitHub: https://github.com/firefly-iii/firefly-iii
-- A popular, mature self-hosted personal finance manager (accounts, budgets,
-  recurring transactions, reports, "piggy banks" for goals).
-
-This project is an **original implementation**, comparable in scope to Firefly
-III but not copied from it - no code, schema, or assets were reused. See
-[Comparison to Firefly III](#comparison-to-firefly-iii) below for a detailed
-breakdown of what's implemented, what's deliberately left out, and what's
-original to this project.
+[Firefly III](https://github.com/firefly-iii/firefly-iii) - a popular,
+mature self-hosted personal finance manager (accounts, budgets, recurring
+transactions, reports, goals). This project is comparable in scope but is an
+original implementation; no code, schema, or assets were reused from it.
 
 ## AI tools used
 
-This project was built using **[Claude Code](https://claude.com/claude-code)**
-(Anthropic's agentic CLI coding tool), working together with it rather than
-generating the app from a single prompt - the codebase is a mix of
-AI-generated and hand-written code, developed collaboratively across many
-iterations.
+Built with [Claude Code](https://claude.com/claude-code), Anthropic's
+agentic CLI coding tool, developed collaboratively across many iterations
+rather than generated from a single prompt.
 
 ## Features
 
 1. **Accounts & transactions** - checking, cash, savings, and credit card
-   accounts; income/expense/transfer transactions; balances (and credit
-   utilization) computed automatically from transaction history.
-2. **Categories & budgets** - categorize transactions and set monthly spending
-   limits per category, with live spent-vs-budget tracking.
-3. **Reports & dashboard** - spending by category, income vs. expense trends,
-   and an account balances overview, all charted.
-4. **Recurring transactions** - define recurring bills/income (rent, a
-   stipend, a subscription, a *semesterly* student activity fee, a *yearly*
-   renters insurance premium) on a weekly/monthly/semesterly/yearly schedule;
-   the app catches up and generates the actual transactions automatically, no
-   cron daemon needed.
-5. **Savings goals** - set a goal (e.g. "buy a $7,000 car"), link it to a
-   dedicated savings account, and see progress plus a projected completion
-   date based on your recent savings pace.
-6. **Credit health simulator & education** - a simulated, educational credit
-   score (not a real FICO/VantageScore - no bureau ever sees your data) built
-   from your own utilization, on-time payment log, and credit age, with a
-   transparent factor breakdown and built-in tips on using cards to build
-   credit wisely. Each card also tracks its **statement closing day and
-   payment due day**, so the app can warn you before a due date is missed -
-   one missed payment is one of the fastest ways to damage a credit score.
-7. **Insights** - a running feed of spending-trend alerts, budget overruns,
-   credit utilization/due-date warnings, income diversification tips,
-   savings-rate feedback, and goal pacing advice. When an `ANTHROPIC_API_KEY`
-   is configured (see below), these are generated live by Claude from a
-   snapshot of your actual data instead of fixed templates; without a key,
-   the app automatically falls back to an equivalent deterministic rule-based
-   engine, so it's fully functional either way.
+   accounts with income/expense/transfer transactions and auto-computed
+   balances and utilization.
+2. **Categories & budgets** - monthly spending limits per category with
+   live spent-vs-budget tracking, including a yearly-amount option that
+   splits a lump sum across 12 months.
+3. **Reports & dashboard** - spending by category, income vs. expense
+   trends, and account balances, all charted.
+4. **Recurring transactions** - bills and income on a daily, weekly,
+   biweekly, monthly, semesterly, or yearly schedule, generated
+   automatically with no cron daemon required.
+5. **Savings goals** - set a target, link it to a savings account, and see
+   progress plus a projected completion date.
+6. **Credit health simulator & education** - a simulated credit score
+   (clearly labeled as educational, not a real FICO/VantageScore) built
+   from utilization, payment history, and credit age, with statement
+   closing/due-date tracking and built-in tips for building credit.
+7. **Insights** - a feed of spending trends, budget overruns, due-date
+   warnings, and savings feedback, generated by Claude when an API key is
+   configured, or by an equivalent rule-based engine when it isn't.
 
 ## Tech stack
 
 - **Backend**: Node.js + TypeScript, Express, SQLite via Node's built-in
-  [`node:sqlite`](https://nodejs.org/api/sqlite.html) module (no native
-  addon, no ORM - just hand-written SQL and prepared statements).
-- **Frontend**: React + TypeScript, Vite, React Router, Recharts, lucide-react.
-  UI components follow [shadcn/ui](https://ui.shadcn.com) conventions - Tailwind
-  CSS + Radix UI primitives (Select, Dialog, Progress, Label, Separator) with
-  the component source living in `client/src/components/ui/`, not an installed
-  package.
-- **AI insights (optional)**: Anthropic's Claude API (`@anthropic-ai/sdk`) -
-  entirely optional, gracefully falls back to a rule-based engine when no API
-  key is configured.
-- **No Docker** - it's a single SQLite file and two small processes, on
-  purpose, to keep it easy to run anywhere.
+  `node:sqlite` module - no ORM, hand-written SQL.
+- **Frontend**: React + TypeScript, Vite, React Router, Recharts, and
+  shadcn/ui-style components (Tailwind CSS + Radix UI primitives).
+- **AI insights (optional)**: Anthropic's Claude API, with a rule-based
+  fallback when no key is set.
 
 ## Getting started
 
-Requires Node.js 22+ (for built-in `node:sqlite` support).
+Requires Node.js 22+.
 
 ```bash
 npm install
 npm run dev
 ```
 
-This starts the API server on `http://localhost:4000` and the frontend on
-`http://localhost:5173` (which proxies `/api` to the server). The database is
-seeded automatically on first run with a realistic 3-month demo scenario
-(two credit cards, a stipend + freelance income, a car savings goal, budgets,
-and recurring bills) so the dashboard isn't empty on first look.
-
-To reset the demo data at any point:
+This starts the API on `http://localhost:4000` and the frontend on
+`http://localhost:5173`. The database seeds itself with demo data on first
+run. To reset it:
 
 ```bash
 npm run seed
 ```
 
-### Enabling AI-generated insights (optional)
+To enable AI-generated insights, copy `.env.example` to `.env` and set
+`ANTHROPIC_API_KEY`. Without it, the app uses its built-in rule-based
+insights instead.
 
-By default, the Insights feed on the Dashboard is generated by a built-in
-rule-based engine - no setup required, no external calls. To switch it to
-live, LLM-generated insights instead:
-
-```bash
-cp .env.example .env
-# then edit .env and set:
-# ANTHROPIC_API_KEY=sk-ant-...
-```
-
-Restart the server (`npm run dev`) and the Dashboard's Insights section will
-switch to an "AI-generated" badge. The server sends Claude a JSON snapshot of
-your accounts, spending, budgets, recurring bills, goals, and credit-health
-breakdown, and asks it to return specific, actionable insights grounded only
-in that data. If the API call ever fails (no key, network issue, rate limit),
-the endpoint automatically falls back to the rule-based insights so the
-feature never breaks the app.
-
-### Production build
+For a production build:
 
 ```bash
 npm run build
 npm run start
 ```
 
-This compiles both the server and the client and serves everything - API and
-frontend - from a single Node process (`http://localhost:4000` by default).
+This serves the API and the built frontend together from one process.
 
 ## Project structure
 
@@ -137,43 +87,21 @@ server/   Express + TypeScript API, SQLite schema, seed data
 client/   React + TypeScript frontend (Vite)
 ```
 
-See `server/src/modules/*` for one folder per feature (accounts, transactions,
-categories, budgets, recurring, reports, goals, credit, insights), each with
-its own routes, service, and (where useful) types.
+`server/src/modules/*` has one folder per feature (accounts, transactions,
+categories, budgets, recurring, reports, goals, credit, insights).
 
 ## Comparison to Firefly III
 
-This project is comparable in functionality and scope to
-[Firefly III](https://github.com/firefly-iii/firefly-iii), a popular
-self-hosted personal finance manager, but implements its own, much smaller
-codebase from scratch - no code was copied from Firefly III.
+**Implemented, comparable to Firefly III:** multiple accounts (including
+credit cards) with running balances, income/expense/transfer transactions,
+categorization, budgets, recurring transactions, reports/dashboard, and
+goals (Firefly's "piggy banks").
 
-**Implemented here, comparable to Firefly III:**
-- Multiple accounts (including credit cards) with running balances
-- Income / expense / transfer transactions
-- Categorization
-- Monthly budgets with spent-vs-limit tracking
-- Recurring transactions with automatic generation
-- Reports/dashboard with charts
-- Goals (analogous to Firefly's "piggy banks")
+**Deliberately out of scope:** multi-currency, multi-user/authentication,
+auto-categorization rules, bill-reminder notifications, bank-import
+pipelines, a double-entry journal model, and tags/attachments.
 
-**Deliberately out of scope** (kept the project toy-sized):
-- Multi-currency support
-- Multi-user accounts / authentication
-- A rules engine for auto-categorization
-- Real bill-reminder notifications (email/push)
-- Bank-import pipeline (Firefly's Data Importer, API tokens)
-- A full double-entry journal/transaction-group model
-- Tags, attachments, a real cron-based scheduler with an admin panel
-
-**Added here, original to this project (not in Firefly III):** a simulated,
-educational credit-health score with a transparent factor breakdown, credit
-card statement-closing/payment-due-date tracking, semester/yearly recurring
-fee schedules, built-in credit-building education content, and a financial
-insights feed (spending trends, budget overruns, upcoming due dates, income
-diversification, savings rate, goal pacing) that can run either as a
-deterministic rule engine or as live Claude-generated analysis - all
-motivated by the target user (a student managing their first credit cards
-and semester/annual fees), not present in the reference project. The credit
-score and AI insights are both clearly labeled in the UI as educational
-estimates, not real credit bureau data or financial advice.
+**Original to this project:** the simulated credit-health score and
+education content, statement closing/due-date tracking, and the AI-backed
+insights feed - all built around the needs of a student managing their
+first credit cards, not present in the reference project.
