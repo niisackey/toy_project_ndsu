@@ -15,9 +15,7 @@ original implementation; no code, schema, or assets were reused from it.
 
 ## AI tools used
 
-Built with [Claude Code](https://claude.com/claude-code), Anthropic's
-agentic CLI coding tool, developed collaboratively across many iterations
-rather than generated from a single prompt.
+I built this project with claude and used bolt.new for some Ui help as well
 
 ## Features
 
