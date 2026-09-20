@@ -39,7 +39,8 @@ Rules:
 - Use "positive" to reinforce good habits you can see in the data (on pace for goals, good savings rate, low utilization) - don't skip these if they're true, students need encouragement too.
 - Use "tip" for suggestions and things to keep an eye on.
 - Be concrete: name the actual category, account, or goal and cite the real number.
-- Never give generic advice unconnected to the data provided.`;
+- Never give generic advice unconnected to the data provided.
+- The snapshot's "note" field explains which amounts are in baseCurrency vs. an item's own currency - always use the correct currency symbol/code for the figure you're citing.`;
 
 function extractJsonArray(text: string): unknown {
   const trimmed = text.trim();

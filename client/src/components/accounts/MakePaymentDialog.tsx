@@ -14,6 +14,7 @@ import {
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { formatMoney } from "../../lib/currency";
 import type { Account } from "../../types";
 
 export function MakePaymentDialog({
@@ -32,6 +33,9 @@ export function MakePaymentDialog({
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [submitting, setSubmitting] = useState(false);
+
+  const selectedAccount = sourceAccounts.find((a) => a.id === fromAccountId);
+  const crossCurrency = Boolean(selectedAccount) && selectedAccount!.currency !== card.currency;
 
   function handleOpenChange(next: boolean) {
     setOpen(next);
@@ -92,14 +96,16 @@ export function MakePaymentDialog({
                 <SelectContent>
                   {sourceAccounts.map((a) => (
                     <SelectItem key={a.id} value={String(a.id)}>
-                      {a.name} (${a.balance.toFixed(2)})
+                      {a.name} ({formatMoney(a.balance, a.currency)})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor={`amount-${card.id}`}>Amount</Label>
+              <Label htmlFor={`amount-${card.id}`}>
+                Amount{selectedAccount ? ` (${selectedAccount.currency})` : ""}
+              </Label>
               <Input
                 id={`amount-${card.id}`}
                 type="number"
@@ -109,7 +115,9 @@ export function MakePaymentDialog({
                 onChange={(e) => setAmount(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Current balance: ${card.balance.toFixed(2)}
+                Current card balance: {formatMoney(card.balance, card.currency)}
+                {crossCurrency &&
+                  ` - converted from ${selectedAccount!.currency} to ${card.currency} automatically`}
               </p>
             </div>
             <div className="space-y-1.5">

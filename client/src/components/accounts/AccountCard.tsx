@@ -7,7 +7,9 @@ import { Card, CardContent } from "../ui/card";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Progress } from "../ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { MakePaymentDialog } from "./MakePaymentDialog";
+import { CURRENCIES, formatMoney } from "../../lib/currency";
 import type { Account } from "../../types";
 
 export function AccountCard({
@@ -24,6 +26,7 @@ export function AccountCard({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(account.name);
   const [initialBalance, setInitialBalance] = useState(String(account.initialBalance));
+  const [currency, setCurrency] = useState(account.currency);
   const [creditLimit, setCreditLimit] = useState(
     account.creditLimit != null ? String(account.creditLimit) : "",
   );
@@ -36,6 +39,7 @@ export function AccountCard({
   function resetFields() {
     setName(account.name);
     setInitialBalance(String(account.initialBalance));
+    setCurrency(account.currency);
     setCreditLimit(account.creditLimit != null ? String(account.creditLimit) : "");
     setNextStatementClosingDate(account.nextStatementClosingDate ?? "");
     setNextPaymentDueDate(account.nextPaymentDueDate ?? "");
@@ -48,6 +52,7 @@ export function AccountCard({
       await updateAccount(account.id, {
         name,
         initialBalance: Number(initialBalance),
+        currency,
         creditLimit: account.type === "credit_card" ? Number(creditLimit) || 0 : null,
         nextStatementClosingDate:
           account.type === "credit_card" && nextStatementClosingDate
@@ -93,6 +98,21 @@ export function AccountCard({
                 value={initialBalance}
                 onChange={(e) => setInitialBalance(e.target.value)}
               />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`currency-${account.id}`}>Currency</Label>
+              <Select value={currency} onValueChange={setCurrency}>
+                <SelectTrigger id={`currency-${account.id}`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CURRENCIES.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>
+                      {c.code} - {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             {account.type === "credit_card" && (
               <>
@@ -148,7 +168,9 @@ export function AccountCard({
           {account.type.replace("_", " ")}
         </div>
         <h3 className="my-1 text-base font-semibold">{account.name}</h3>
-        <div className="text-2xl font-extrabold tracking-tight">${account.balance.toFixed(2)}</div>
+        <div className="text-2xl font-extrabold tracking-tight">
+          {formatMoney(account.balance, account.currency)}
+        </div>
         {account.type === "credit_card" && account.creditLimit && (
           <>
             <Progress
@@ -157,7 +179,7 @@ export function AccountCard({
               indicatorClassName={utilizationBarClass(account.utilizationPct ?? 0)}
             />
             <p className="text-sm text-muted-foreground">
-              {account.utilizationPct}% of ${account.creditLimit} limit
+              {account.utilizationPct}% of {formatMoney(account.creditLimit, account.currency)} limit
             </p>
             {account.nextStatementClosingDate && (
               <p className="text-sm text-muted-foreground">

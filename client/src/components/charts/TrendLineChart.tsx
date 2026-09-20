@@ -8,6 +8,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "../ui/chart";
+import { formatMoney } from "../../lib/currency";
 import { EXPENSE_COLOR, INCOME_COLOR } from "./chartColors";
 
 const chartConfig: ChartConfig = {
@@ -15,7 +16,13 @@ const chartConfig: ChartConfig = {
   expense: { label: "Expense", color: EXPENSE_COLOR },
 };
 
-export function TrendLineChart({ data }: { data: IncomeVsExpenseEntry[] }) {
+export function TrendLineChart({
+  data,
+  currency = "USD",
+}: {
+  data: IncomeVsExpenseEntry[];
+  currency?: string;
+}) {
   if (data.length === 0) {
     return <p className="empty-state">Not enough history yet to show a trend.</p>;
   }
@@ -26,7 +33,7 @@ export function TrendLineChart({ data }: { data: IncomeVsExpenseEntry[] }) {
         <CartesianGrid vertical={false} />
         <XAxis dataKey="period" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
         <YAxis tickLine={false} axisLine={false} tickMargin={8} fontSize={12} width={56} />
-        <ChartTooltip content={<ChartTooltipContent formatter={(v) => `$${Number(v).toFixed(2)}`} />} />
+        <ChartTooltip content={<ChartTooltipContent formatter={(v) => formatMoney(Number(v), currency)} />} />
         <ChartLegend content={<ChartLegendContent />} />
         <Line
           type="monotone"

@@ -14,6 +14,7 @@ export interface CreditFactor {
 export interface CardUtilization {
   accountId: number;
   accountName: string;
+  currency: string;
   balance: number;
   creditLimit: number;
   utilizationPct: number;
@@ -66,6 +67,7 @@ export function computeCreditHealth(): CreditHealthResult {
   const cardUtilization: CardUtilization[] = cards.map((c) => ({
     accountId: c.id,
     accountName: c.name,
+    currency: c.currency,
     balance: c.balance,
     creditLimit: c.creditLimit as number,
     utilizationPct: c.utilizationPct ?? 0,

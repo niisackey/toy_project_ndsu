@@ -1,11 +1,14 @@
 import cors from "cors";
 import express, { type Express } from "express";
 import morgan from "morgan";
+import fs from "node:fs";
 import path from "node:path";
 import { accountsRouter } from "./modules/accounts/accounts.routes";
 import { budgetsRouter } from "./modules/budgets/budgets.routes";
 import { categoriesRouter } from "./modules/categories/categories.routes";
 import { creditRouter } from "./modules/credit/credit.routes";
+import { currencyRouter } from "./modules/currency/currency.routes";
+import { debtsRouter } from "./modules/debts/debts.routes";
 import { goalsRouter } from "./modules/goals/goals.routes";
 import { insightsRouter } from "./modules/insights/insights.routes";
 import { recurringRouter } from "./modules/recurring/recurring.routes";
@@ -33,9 +36,11 @@ export function createApp(): Express {
   app.use("/api/goals", goalsRouter);
   app.use("/api/credit", creditRouter);
   app.use("/api/insights", insightsRouter);
+  app.use("/api/currency", currencyRouter);
+  app.use("/api/debts", debtsRouter);
 
-  if (process.env.NODE_ENV === "production") {
-    const clientDist = path.join(__dirname, "../../client/dist");
+  const clientDist = path.join(__dirname, "../../client/dist");
+  if (fs.existsSync(path.join(clientDist, "index.html"))) {
     app.use(express.static(clientDist));
     app.get(/^(?!\/api).*/, (_req, res) => {
       res.sendFile(path.join(clientDist, "index.html"));

@@ -5,6 +5,7 @@ export interface AccountInput {
   name: string;
   type: AccountType;
   initialBalance: number;
+  currency?: string;
   creditLimit?: number | null;
   nextStatementClosingDate?: string | null;
   nextPaymentDueDate?: string | null;

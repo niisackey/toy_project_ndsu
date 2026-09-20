@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { format } from "date-fns";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Search, Trash2 } from "lucide-react";
 import { createTransaction, deleteTransaction } from "../api/transactions";
 import { PageLayout } from "../components/layout/PageLayout";
 import { Badge } from "../components/ui/badge";
@@ -15,11 +15,14 @@ import {
 } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { Pagination } from "../components/ui/pagination";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { useAccounts } from "../hooks/useAccounts";
 import { useCategories } from "../hooks/useCategories";
+import { usePagination } from "../hooks/usePagination";
 import { useTransactions } from "../hooks/useTransactions";
+import { formatMoney } from "../lib/currency";
 import type { TransactionType } from "../types";
 
 const typeBadge: Record<TransactionType, "success" | "destructive" | "secondary"> = {
@@ -33,6 +36,29 @@ export default function TransactionsPage() {
   const { categories } = useCategories();
   const { transactions, loading, refresh } = useTransactions();
 
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState<TransactionType | "all">("all");
+  const [filterAccountId, setFilterAccountId] = useState<number | "all">("all");
+  const [filterCategoryId, setFilterCategoryId] = useState<number | "all">("all");
+
+  const filteredTransactions = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return transactions.filter((t) => {
+      if (query && !(t.description ?? "").toLowerCase().includes(query)) return false;
+      if (filterType !== "all" && t.type !== filterType) return false;
+      if (filterAccountId !== "all" && t.accountId !== filterAccountId && t.transferToAccountId !== filterAccountId)
+        return false;
+      if (filterCategoryId !== "all" && t.categoryId !== filterCategoryId) return false;
+      return true;
+    });
+  }, [transactions, search, filterType, filterAccountId, filterCategoryId]);
+
+  const { pageItems, page, pageCount, setPage } = usePagination(filteredTransactions, 10);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, filterType, filterAccountId, filterCategoryId, setPage]);
+
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<TransactionType>("expense");
   const [amount, setAmount] = useState("");
@@ -45,6 +71,9 @@ export default function TransactionsPage() {
 
   function accountName(id: number): string {
     return accounts.find((a) => a.id === id)?.name ?? `#${id}`;
+  }
+  function accountCurrency(id: number): string {
+    return accounts.find((a) => a.id === id)?.currency ?? "USD";
   }
   function categoryName(id: number | null): string {
     if (id === null) return "-";
@@ -132,7 +161,7 @@ export default function TransactionsPage() {
                   <SelectContent>
                     {accounts.map((a) => (
                       <SelectItem key={a.id} value={String(a.id)}>
-                        {a.name}
+                        {a.name} ({a.currency})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -151,7 +180,7 @@ export default function TransactionsPage() {
                     <SelectContent>
                       {accounts.map((a) => (
                         <SelectItem key={a.id} value={String(a.id)}>
-                          {a.name}
+                          {a.name} ({a.currency})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -193,46 +222,113 @@ export default function TransactionsPage() {
         </Dialog>
       }
     >
+      <div className="mb-4 flex flex-wrap items-center gap-2.5">
+        <div className="relative w-full max-w-xs">
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search description..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+        <Select value={filterType} onValueChange={(v) => setFilterType(v as TransactionType | "all")}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All types</SelectItem>
+            <SelectItem value="income">Income</SelectItem>
+            <SelectItem value="expense">Expense</SelectItem>
+            <SelectItem value="transfer">Transfer</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={String(filterAccountId)}
+          onValueChange={(v) => setFilterAccountId(v === "all" ? "all" : Number(v))}
+        >
+          <SelectTrigger className="w-[160px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All accounts</SelectItem>
+            {accounts.map((a) => (
+              <SelectItem key={a.id} value={String(a.id)}>
+                {a.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={String(filterCategoryId)}
+          onValueChange={(v) => setFilterCategoryId(v === "all" ? "all" : Number(v))}
+        >
+          <SelectTrigger className="w-[160px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All categories</SelectItem>
+            {categories.map((c) => (
+              <SelectItem key={c.id} value={String(c.id)}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading...</p>
+      ) : filteredTransactions.length === 0 ? (
+        <p className="empty-state">No transactions match your filters.</p>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Account</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transactions.map((t) => (
-              <TableRow key={t.id}>
-                <TableCell className="whitespace-nowrap">{t.date}</TableCell>
-                <TableCell>
-                  <Badge variant={typeBadge[t.type]} className="capitalize">
-                    {t.type}
-                  </Badge>
-                </TableCell>
-                <TableCell>{t.description ?? "-"}</TableCell>
-                <TableCell>
-                  {accountName(t.accountId)}
-                  {t.transferToAccountId ? ` -> ${accountName(t.transferToAccountId)}` : ""}
-                </TableCell>
-                <TableCell>{categoryName(t.categoryId)}</TableCell>
-                <TableCell className="font-medium">${t.amount.toFixed(2)}</TableCell>
-                <TableCell>
-                  <Button variant="outline" size="sm" onClick={() => handleDelete(t.id)}>
-                    <Trash2 size={14} /> Delete
-                  </Button>
-                </TableCell>
+        <>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Account</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead></TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {pageItems.map((t) => (
+                <TableRow key={t.id}>
+                  <TableCell className="whitespace-nowrap">{t.date}</TableCell>
+                  <TableCell>
+                    <Badge variant={typeBadge[t.type]} className="capitalize">
+                      {t.type}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{t.description ?? "-"}</TableCell>
+                  <TableCell>
+                    {accountName(t.accountId)}
+                    {t.transferToAccountId ? ` -> ${accountName(t.transferToAccountId)}` : ""}
+                  </TableCell>
+                  <TableCell>{categoryName(t.categoryId)}</TableCell>
+                  <TableCell className="font-medium">
+                    {formatMoney(t.amount, accountCurrency(t.accountId))}
+                    {t.transferToAccountId && t.transferAmountConverted !== null && (
+                      <span className="ml-1 text-xs font-normal text-muted-foreground">
+                        (-&gt; {formatMoney(t.transferAmountConverted, accountCurrency(t.transferToAccountId))})
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="outline" size="sm" onClick={() => handleDelete(t.id)}>
+                      <Trash2 size={14} /> Delete
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <Pagination page={page} pageCount={pageCount} onPageChange={setPage} />
+        </>
       )}
     </PageLayout>
   );

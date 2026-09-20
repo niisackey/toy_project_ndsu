@@ -7,7 +7,7 @@ const NET_MOVEMENT_SQL = `
   COALESCE((SELECT SUM(amount) FROM transactions WHERE account_id = a.id AND type = 'income'), 0)
   - COALESCE((SELECT SUM(amount) FROM transactions WHERE account_id = a.id AND type = 'expense'), 0)
   - COALESCE((SELECT SUM(amount) FROM transactions WHERE account_id = a.id AND type = 'transfer'), 0)
-  + COALESCE((SELECT SUM(amount) FROM transactions WHERE transfer_to_account_id = a.id AND type = 'transfer'), 0)
+  + COALESCE((SELECT SUM(COALESCE(transfer_amount_converted, amount)) FROM transactions WHERE transfer_to_account_id = a.id AND type = 'transfer'), 0)
 `;
 
 interface AccountWithMovementRow extends AccountRow {
@@ -28,6 +28,7 @@ function toDto(row: AccountWithMovementRow): AccountDto {
     name: row.name,
     type: row.type,
     initialBalance: row.initial_balance,
+    currency: row.currency,
     creditLimit: row.credit_limit,
     balance: Math.round(balance * 100) / 100,
     utilizationPct,
@@ -60,6 +61,7 @@ export interface CreateAccountInput {
   name: string;
   type: AccountType;
   initialBalance: number;
+  currency?: string;
   creditLimit?: number | null;
   nextStatementClosingDate?: string | null;
   nextPaymentDueDate?: string | null;
@@ -68,13 +70,14 @@ export interface CreateAccountInput {
 export function createAccount(input: CreateAccountInput): AccountDto {
   const result = db
     .prepare(
-      `INSERT INTO accounts (name, type, initial_balance, credit_limit, next_statement_closing_date, next_payment_due_date)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO accounts (name, type, initial_balance, currency, credit_limit, next_statement_closing_date, next_payment_due_date)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       input.name,
       input.type,
       input.initialBalance,
+      input.currency ?? "USD",
       input.creditLimit ?? null,
       input.nextStatementClosingDate ?? null,
       input.nextPaymentDueDate ?? null,
@@ -87,6 +90,7 @@ export function updateAccount(id: number, input: Partial<CreateAccountInput>): A
   const name = input.name ?? existing.name;
   const type = input.type ?? existing.type;
   const initialBalance = input.initialBalance ?? existing.initialBalance;
+  const currency = input.currency ?? existing.currency;
   const creditLimit = input.creditLimit !== undefined ? input.creditLimit : existing.creditLimit;
   const nextStatementClosingDate =
     input.nextStatementClosingDate !== undefined
@@ -97,9 +101,18 @@ export function updateAccount(id: number, input: Partial<CreateAccountInput>): A
       ? input.nextPaymentDueDate
       : existing.nextPaymentDueDate;
   db.prepare(
-    `UPDATE accounts SET name = ?, type = ?, initial_balance = ?, credit_limit = ?, next_statement_closing_date = ?, next_payment_due_date = ?
+    `UPDATE accounts SET name = ?, type = ?, initial_balance = ?, currency = ?, credit_limit = ?, next_statement_closing_date = ?, next_payment_due_date = ?
      WHERE id = ?`,
-  ).run(name, type, initialBalance, creditLimit, nextStatementClosingDate, nextPaymentDueDate, id);
+  ).run(
+    name,
+    type,
+    initialBalance,
+    currency,
+    creditLimit,
+    nextStatementClosingDate,
+    nextPaymentDueDate,
+    id,
+  );
   return getAccount(id);
 }
 

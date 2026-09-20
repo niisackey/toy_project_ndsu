@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS accounts (
   name TEXT NOT NULL,
   type TEXT NOT NULL CHECK(type IN ('checking','cash','savings','credit_card')),
   initial_balance REAL NOT NULL DEFAULT 0,
+  currency TEXT NOT NULL DEFAULT 'USD',
   credit_limit REAL,
   next_statement_closing_date TEXT,
   next_payment_due_date TEXT,
@@ -38,6 +39,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   description TEXT,
   account_id INTEGER NOT NULL REFERENCES accounts(id),
   transfer_to_account_id INTEGER REFERENCES accounts(id),
+  transfer_amount_converted REAL,
   category_id INTEGER REFERENCES categories(id),
   recurring_rule_id INTEGER REFERENCES recurring_rules(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -69,7 +71,44 @@ CREATE TABLE IF NOT EXISTS credit_card_payments (
   UNIQUE(account_id, statement_month)
 );
 
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS exchange_rates (
+  currency TEXT PRIMARY KEY,
+  rate_to_usd REAL NOT NULL,
+  fetched_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS debts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  direction TEXT NOT NULL CHECK(direction IN ('lent','borrowed')),
+  person_name TEXT NOT NULL,
+  principal_amount REAL NOT NULL CHECK(principal_amount > 0),
+  account_id INTEGER NOT NULL REFERENCES accounts(id),
+  category_id INTEGER REFERENCES categories(id),
+  description TEXT,
+  date TEXT NOT NULL,
+  due_date TEXT,
+  status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open','paid')),
+  settled_at TEXT,
+  transaction_id INTEGER REFERENCES transactions(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS debt_payments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  debt_id INTEGER NOT NULL REFERENCES debts(id),
+  amount REAL NOT NULL CHECK(amount > 0),
+  date TEXT NOT NULL,
+  transaction_id INTEGER REFERENCES transactions(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE INDEX IF NOT EXISTS idx_transactions_account_id ON transactions(account_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
 CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions(category_id);
 CREATE INDEX IF NOT EXISTS idx_budgets_month ON budgets(month);
+CREATE INDEX IF NOT EXISTS idx_debt_payments_debt_id ON debt_payments(debt_id);

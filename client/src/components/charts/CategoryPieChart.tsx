@@ -8,9 +8,16 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "../ui/chart";
+import { formatMoney } from "../../lib/currency";
 import { CATEGORICAL } from "./chartColors";
 
-export function CategoryPieChart({ data }: { data: SpendingByCategoryEntry[] }) {
+export function CategoryPieChart({
+  data,
+  currency = "USD",
+}: {
+  data: SpendingByCategoryEntry[];
+  currency?: string;
+}) {
   if (data.length === 0) {
     return <p className="empty-state">No expenses recorded for this month yet.</p>;
   }
@@ -34,7 +41,7 @@ export function CategoryPieChart({ data }: { data: SpendingByCategoryEntry[] }) 
   return (
     <ChartContainer config={chartConfig} className="mx-auto h-[300px] w-full max-w-[380px]">
       <PieChart>
-        <ChartTooltip content={<ChartTooltipContent formatter={(v) => `$${Number(v).toFixed(2)}`} />} />
+        <ChartTooltip content={<ChartTooltipContent formatter={(v) => formatMoney(Number(v), currency)} />} />
         <Pie
           data={chartData}
           dataKey="amount"
@@ -53,7 +60,7 @@ export function CategoryPieChart({ data }: { data: SpendingByCategoryEntry[] }) 
               return (
                 <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
                   <tspan x={viewBox.cx} y={(viewBox.cy ?? 0) - 6} className="fill-foreground text-lg font-bold">
-                    ${total.toFixed(0)}
+                    {formatMoney(total, currency)}
                   </tspan>
                   <tspan x={viewBox.cx} y={(viewBox.cy ?? 0) + 14} className="fill-muted-foreground text-xs">
                     total spent

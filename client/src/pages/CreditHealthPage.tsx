@@ -14,6 +14,7 @@ import { Progress } from "../components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { useAccounts } from "../hooks/useAccounts";
 import { useCreditHealth } from "../hooks/useCreditHealth";
+import { formatMoney } from "../lib/currency";
 
 function scoreColor(score: number): string {
   if (score >= 740) return STATUS.good;
@@ -116,7 +117,7 @@ export default function CreditHealthPage() {
                   <CardContent className="pt-5">
                     <h3 className="mb-1.5 text-base font-semibold">{c.accountName}</h3>
                     <p className="text-sm text-muted-foreground">
-                      ${c.balance.toFixed(2)} of ${c.creditLimit.toFixed(2)}
+                      {formatMoney(c.balance, c.currency)} of {formatMoney(c.creditLimit, c.currency)}
                     </p>
                     <Progress
                       value={Math.min(100, c.utilizationPct)}

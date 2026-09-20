@@ -1,7 +1,9 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { format } from "date-fns";
 import { Plus, Trash2 } from "lucide-react";
 import { createBudget, deleteBudget } from "../api/budgets";
+import { fetchRates } from "../api/currency";
+import { formatMoney } from "../lib/currency";
 import { PageLayout } from "../components/layout/PageLayout";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -34,6 +36,11 @@ export default function BudgetsPage() {
   const [limitAmount, setLimitAmount] = useState("");
   const [isYearly, setIsYearly] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [baseCurrency, setBaseCurrency] = useState("USD");
+
+  useEffect(() => {
+    fetchRates().then((r) => setBaseCurrency(r.baseCurrency));
+  }, []);
 
   const enteredAmount = Number(limitAmount) || 0;
   const monthlyAmount = isYearly ? Math.round((enteredAmount / 12) * 100) / 100 : enteredAmount;
@@ -66,7 +73,7 @@ export default function BudgetsPage() {
   return (
     <PageLayout
       title="Budgets"
-      subtitle="Set monthly limits per category and track what you've spent"
+      subtitle={`Set monthly limits per category and track what you've spent, in ${baseCurrency}`}
       actions={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
@@ -101,7 +108,9 @@ export default function BudgetsPage() {
                 <Switch id="isYearly" checked={isYearly} onCheckedChange={setIsYearly} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="limit">{isYearly ? "Yearly amount" : "Monthly limit"}</Label>
+                <Label htmlFor="limit">
+                  {isYearly ? "Yearly amount" : "Monthly limit"} ({baseCurrency})
+                </Label>
                 <Input
                   id="limit"
                   type="number"
@@ -112,8 +121,8 @@ export default function BudgetsPage() {
                 />
                 {isYearly && enteredAmount > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    = ${monthlyAmount.toFixed(2)}/month, set for {month} through the following 11
-                    months.
+                    = {formatMoney(monthlyAmount, baseCurrency)}/month, set for {month} through the
+                    following 11 months.
                   </p>
                 )}
               </div>
@@ -146,7 +155,7 @@ export default function BudgetsPage() {
                 <CardContent className="pt-5">
                   <h3 className="mb-1.5 text-base font-semibold">{b.categoryName}</h3>
                   <p className="text-sm text-muted-foreground">
-                    ${b.spent.toFixed(2)} of ${b.limitAmount.toFixed(2)}
+                    {formatMoney(b.spent, baseCurrency)} of {formatMoney(b.limitAmount, baseCurrency)}
                   </p>
                   <Progress
                     value={pct}

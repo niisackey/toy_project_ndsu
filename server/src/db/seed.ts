@@ -1,6 +1,8 @@
 import { addDays, format, subMonths } from "date-fns";
 import { db } from "./connection";
 import { migrate } from "./migrate";
+import { convert } from "../modules/currency/currency.service";
+import { createDebt, logDebtPayment } from "../modules/debts/debts.service";
 
 function dateOffset(monthsAgo: number, day: number): string {
   const base = subMonths(new Date(), monthsAgo);
@@ -21,6 +23,8 @@ function clearAll(): void {
     DELETE FROM credit_card_payments;
     DELETE FROM goals;
     DELETE FROM budgets;
+    DELETE FROM debt_payments;
+    DELETE FROM debts;
     DELETE FROM transactions;
     DELETE FROM recurring_rules;
     DELETE FROM categories;
@@ -34,17 +38,25 @@ function seedDatabase(): void {
   try {
     clearAll();
 
+    db.prepare(`INSERT OR IGNORE INTO categories (name, icon) VALUES ('Lending', '🤝')`).run();
+    db.prepare(`INSERT OR IGNORE INTO categories (name, icon) VALUES ('Borrowed Funds', '🙏')`).run();
+    db.prepare(`INSERT OR IGNORE INTO categories (name, icon) VALUES ('Miscellaneous', '📦')`).run();
+
     const insertAccount = db.prepare(
-      `INSERT INTO accounts (name, type, initial_balance, credit_limit, next_statement_closing_date, next_payment_due_date)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO accounts (name, type, initial_balance, credit_limit, next_statement_closing_date, next_payment_due_date, currency)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
     );
     const accounts = {
       checking: Number(
-        insertAccount.run("Checking", "checking", 900, null, null, null).lastInsertRowid,
+        insertAccount.run("Checking", "checking", 900, null, null, null, "USD").lastInsertRowid,
       ),
-      cash: Number(insertAccount.run("Cash", "cash", 60, null, null, null).lastInsertRowid),
+      cash: Number(insertAccount.run("Cash", "cash", 60, null, null, null, "USD").lastInsertRowid),
       carFund: Number(
-        insertAccount.run("Car Fund", "savings", 300, null, null, null).lastInsertRowid,
+        insertAccount.run("Car Fund", "savings", 300, null, null, null, "USD").lastInsertRowid,
+      ),
+      studyAbroad: Number(
+        insertAccount.run("Study Abroad Fund", "savings", 250, null, null, null, "EUR")
+          .lastInsertRowid,
       ),
       chase: Number(
         insertAccount.run(
@@ -54,6 +66,7 @@ function seedDatabase(): void {
           2000,
           daysFromNow(5),
           today(),
+          "USD",
         ).lastInsertRowid,
       ),
       discover: Number(
@@ -64,6 +77,7 @@ function seedDatabase(): void {
           1500,
           daysFromNow(18),
           daysFromNow(11),
+          "USD",
         ).lastInsertRowid,
       ),
     };
@@ -233,6 +247,19 @@ function seedDatabase(): void {
       null,
       categories.transportation,
     );
+    db.prepare(
+      `INSERT INTO transactions (type, amount, date, description, account_id, transfer_to_account_id, category_id, transfer_amount_converted)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      "transfer",
+      100,
+      dateOffset(1, 16),
+      "Study abroad savings",
+      accounts.checking,
+      accounts.studyAbroad,
+      null,
+      convert(100, "USD", "EUR"),
+    );
 
     const insertBudget = db.prepare(
       `INSERT INTO budgets (category_id, month, limit_amount) VALUES (?, ?, ?)`,
@@ -340,6 +367,27 @@ function seedDatabase(): void {
     insertPayment.run(accounts.chase, format(subMonths(new Date(), 1), "yyyy-MM"), 1);
     insertPayment.run(accounts.discover, format(subMonths(new Date(), 2), "yyyy-MM"), 1);
     insertPayment.run(accounts.discover, format(subMonths(new Date(), 1), "yyyy-MM"), 0);
+
+    createDebt({
+      direction: "lent",
+      personName: "Priya",
+      principalAmount: 50,
+      accountId: accounts.cash,
+      description: "Lunch money",
+      date: dateOffset(0, 4),
+      dueDate: daysFromNow(10),
+    });
+    const textbookLoan = createDebt({
+      direction: "borrowed",
+      personName: "Uncle Kofi",
+      principalAmount: 200,
+      accountId: accounts.checking,
+      description: "Textbook money",
+      date: dateOffset(1, 8),
+      dueDate: null,
+    });
+    logDebtPayment(textbookLoan.id, { amount: 75, date: dateOffset(0, 2) });
+
     db.exec("COMMIT");
   } catch (err) {
     db.exec("ROLLBACK");

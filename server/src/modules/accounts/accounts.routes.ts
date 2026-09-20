@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { asyncHandler } from "../../shared/errors";
+import { SUPPORTED_CURRENCY_CODES } from "../../shared/currencies";
 import * as accountsService from "./accounts.service";
 
 export const accountsRouter = Router();
@@ -9,6 +10,7 @@ const accountSchema = z.object({
   name: z.string().min(1),
   type: z.enum(["checking", "cash", "savings", "credit_card"]),
   initialBalance: z.number(),
+  currency: z.enum(SUPPORTED_CURRENCY_CODES as [string, ...string[]]).optional(),
   creditLimit: z.number().positive().nullable().optional(),
   nextStatementClosingDate: z
     .string()

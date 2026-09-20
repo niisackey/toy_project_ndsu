@@ -18,4 +18,12 @@ export function migrate(): void {
 
   ensureColumn("accounts", "next_statement_closing_date", "TEXT");
   ensureColumn("accounts", "next_payment_due_date", "TEXT");
+  ensureColumn("accounts", "currency", "TEXT NOT NULL DEFAULT 'USD'");
+  ensureColumn("transactions", "transfer_amount_converted", "REAL");
+
+  db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('base_currency', 'USD')`).run();
+
+  db.prepare(`INSERT OR IGNORE INTO categories (name, icon) VALUES ('Lending', '🤝')`).run();
+  db.prepare(`INSERT OR IGNORE INTO categories (name, icon) VALUES ('Borrowed Funds', '🙏')`).run();
+  db.prepare(`INSERT OR IGNORE INTO categories (name, icon) VALUES ('Miscellaneous', '📦')`).run();
 }

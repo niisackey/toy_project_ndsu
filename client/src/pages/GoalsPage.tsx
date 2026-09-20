@@ -18,6 +18,7 @@ import { Progress } from "../components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { useAccounts } from "../hooks/useAccounts";
 import { useGoals } from "../hooks/useGoals";
+import { formatMoney } from "../lib/currency";
 
 export default function GoalsPage() {
   const { accounts } = useAccounts();
@@ -110,7 +111,7 @@ export default function GoalsPage() {
                   <SelectContent>
                     {savingsAccounts.map((a) => (
                       <SelectItem key={a.id} value={String(a.id)}>
-                        {a.name}
+                        {a.name} ({a.currency})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -141,14 +142,15 @@ export default function GoalsPage() {
               <CardContent className="pt-5">
                 <h3 className="mb-1.5 text-base font-semibold">{g.name}</h3>
                 <p className="text-sm text-muted-foreground">
-                  ${g.currentAmount.toFixed(2)} of ${g.targetAmount.toFixed(2)} ({g.linkedAccountName})
+                  {formatMoney(g.currentAmount, g.currency)} of {formatMoney(g.targetAmount, g.currency)} (
+                  {g.linkedAccountName})
                 </p>
                 <Progress value={g.progressPct} className="my-2.5" />
                 <p className="text-sm text-muted-foreground">{g.progressPct}% complete</p>
                 {g.projectedCompletionDate ? (
                   <p className="mt-1 text-sm">
-                    At your recent savings pace (~${g.monthlyRate.toFixed(2)}/mo), projected to
-                    reach this goal by <strong>{g.projectedCompletionDate}</strong>.
+                    At your recent savings pace (~{formatMoney(g.monthlyRate, g.currency)}/mo),
+                    projected to reach this goal by <strong>{g.projectedCompletionDate}</strong>.
                   </p>
                 ) : (
                   <p className="mt-1 text-sm text-muted-foreground">

@@ -8,6 +8,7 @@ import { Card, CardContent } from "../components/ui/card";
 import { Label } from "../components/ui/label";
 import { MonthPicker } from "../components/ui/month-picker";
 import { fetchBalancesOverview, fetchIncomeVsExpense, fetchSpendingByCategory } from "../api/reports";
+import { fetchRates } from "../api/currency";
 import type { BalancesOverviewEntry, IncomeVsExpenseEntry, SpendingByCategoryEntry } from "../types";
 
 export default function ReportsPage() {
@@ -15,6 +16,7 @@ export default function ReportsPage() {
   const [spending, setSpending] = useState<SpendingByCategoryEntry[]>([]);
   const [trend, setTrend] = useState<IncomeVsExpenseEntry[]>([]);
   const [balances, setBalances] = useState<BalancesOverviewEntry[]>([]);
+  const [baseCurrency, setBaseCurrency] = useState("USD");
 
   useEffect(() => {
     fetchSpendingByCategory(month).then(setSpending);
@@ -23,6 +25,7 @@ export default function ReportsPage() {
   useEffect(() => {
     fetchIncomeVsExpense().then(setTrend);
     fetchBalancesOverview().then(setBalances);
+    fetchRates().then((r) => setBaseCurrency(r.baseCurrency));
   }, []);
 
   return (
@@ -34,7 +37,7 @@ export default function ReportsPage() {
         </div>
         <Card>
           <CardContent className="pt-5">
-            <CategoryPieChart data={spending} />
+            <CategoryPieChart data={spending} currency={baseCurrency} />
           </CardContent>
         </Card>
       </div>
@@ -43,7 +46,7 @@ export default function ReportsPage() {
         <h2 className="mb-3.5 text-base font-bold tracking-tight">Income vs. expense (last 6 months)</h2>
         <Card>
           <CardContent className="pt-5">
-            <TrendLineChart data={trend} />
+            <TrendLineChart data={trend} currency={baseCurrency} />
           </CardContent>
         </Card>
       </div>
@@ -52,7 +55,7 @@ export default function ReportsPage() {
         <h2 className="mb-3.5 text-base font-bold tracking-tight">Account balances</h2>
         <Card>
           <CardContent className="pt-5">
-            <BalanceBarChart data={balances} />
+            <BalanceBarChart data={balances} currency={baseCurrency} />
           </CardContent>
         </Card>
       </div>

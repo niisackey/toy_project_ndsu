@@ -1,5 +1,6 @@
 import { db } from "../../db/connection";
 import { BadRequestError, NotFoundError } from "../../shared/errors";
+import { convert } from "../currency/currency.service";
 import type { TransactionDto, TransactionRow, TransactionType } from "./transactions.types";
 
 function toDto(row: TransactionRow): TransactionDto {
@@ -11,6 +12,7 @@ function toDto(row: TransactionRow): TransactionDto {
     description: row.description,
     accountId: row.account_id,
     transferToAccountId: row.transfer_to_account_id,
+    transferAmountConverted: row.transfer_amount_converted,
     categoryId: row.category_id,
     recurringRuleId: row.recurring_rule_id,
     createdAt: row.created_at,
@@ -81,6 +83,23 @@ function assertAccountExists(id: number): void {
   if (!row) throw new BadRequestError(`Account ${id} does not exist`);
 }
 
+function getAccountCurrency(accountId: number): string {
+  const row = db.prepare(`SELECT currency FROM accounts WHERE id = ?`).get(accountId) as unknown as
+    | { currency: string }
+    | undefined;
+  return row?.currency ?? "USD";
+}
+
+// for a cross-currency transfer, the amount credited to the destination
+// account, in its own currency; null for same-currency transfers
+function computeTransferAmountConverted(input: CreateTransactionInput): number | null {
+  if (input.type !== "transfer" || !input.transferToAccountId) return null;
+  const fromCurrency = getAccountCurrency(input.accountId);
+  const toCurrency = getAccountCurrency(input.transferToAccountId);
+  if (fromCurrency === toCurrency) return null;
+  return convert(input.amount, fromCurrency, toCurrency);
+}
+
 function validateInput(input: CreateTransactionInput): void {
   assertAccountExists(input.accountId);
   if (input.type === "transfer") {
@@ -96,10 +115,11 @@ function validateInput(input: CreateTransactionInput): void {
 
 export function createTransaction(input: CreateTransactionInput): TransactionDto {
   validateInput(input);
+  const transferAmountConverted = computeTransferAmountConverted(input);
   const result = db
     .prepare(
-      `INSERT INTO transactions (type, amount, date, description, account_id, transfer_to_account_id, category_id, recurring_rule_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO transactions (type, amount, date, description, account_id, transfer_to_account_id, transfer_amount_converted, category_id, recurring_rule_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       input.type,
@@ -108,6 +128,7 @@ export function createTransaction(input: CreateTransactionInput): TransactionDto
       input.description ?? null,
       input.accountId,
       input.type === "transfer" ? (input.transferToAccountId ?? null) : null,
+      input.type === "transfer" ? transferAmountConverted : null,
       input.categoryId ?? null,
       input.recurringRuleId ?? null,
     );
@@ -134,8 +155,9 @@ export function updateTransaction(
       input.recurringRuleId !== undefined ? input.recurringRuleId : existing.recurringRuleId,
   };
   validateInput(merged);
+  const transferAmountConverted = computeTransferAmountConverted(merged);
   db.prepare(
-    `UPDATE transactions SET type = ?, amount = ?, date = ?, description = ?, account_id = ?, transfer_to_account_id = ?, category_id = ?, recurring_rule_id = ?
+    `UPDATE transactions SET type = ?, amount = ?, date = ?, description = ?, account_id = ?, transfer_to_account_id = ?, transfer_amount_converted = ?, category_id = ?, recurring_rule_id = ?
      WHERE id = ?`,
   ).run(
     merged.type,
@@ -144,6 +166,7 @@ export function updateTransaction(
     merged.description ?? null,
     merged.accountId,
     merged.type === "transfer" ? (merged.transferToAccountId ?? null) : null,
+    merged.type === "transfer" ? transferAmountConverted : null,
     merged.categoryId ?? null,
     merged.recurringRuleId ?? null,
     id,

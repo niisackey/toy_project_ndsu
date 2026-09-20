@@ -2,6 +2,7 @@ import { subMonths, format, addMonths } from "date-fns";
 import { db } from "../../db/connection";
 import { BadRequestError, NotFoundError } from "../../shared/errors";
 import { getAccount } from "../accounts/accounts.service";
+import { convert } from "../currency/currency.service";
 
 export interface GoalRow {
   id: number;
@@ -16,6 +17,7 @@ export interface GoalDto {
   id: number;
   name: string;
   targetAmount: number;
+  currency: string;
   targetDate: string | null;
   linkedAccountId: number;
   linkedAccountName: string;
@@ -32,7 +34,7 @@ function monthlyNetInflow(accountId: number): number {
     .prepare(
       `SELECT
          COALESCE(SUM(CASE WHEN type = 'income' THEN amount
-                            WHEN type = 'transfer' AND transfer_to_account_id = ? THEN amount
+                            WHEN type = 'transfer' AND transfer_to_account_id = ? THEN COALESCE(transfer_amount_converted, amount)
                             ELSE 0 END), 0) AS inflow,
          COALESCE(SUM(CASE WHEN type = 'expense' THEN amount
                             WHEN type = 'transfer' AND account_id = ? THEN amount
@@ -47,18 +49,27 @@ function monthlyNetInflow(accountId: number): number {
   return (row.inflow - row.outflow) / 3;
 }
 
-function overallMonthlySavingsRate(): number {
+// fallback for a brand-new account with no history of its own - the app's
+// overall savings pace, converted into the goal's own currency
+function overallMonthlySavingsRate(targetCurrency: string): number {
   const threeMonthsAgo = format(subMonths(new Date(), 3), "yyyy-MM-dd");
-  const row = db
+  const rows = db
     .prepare(
-      `SELECT
-         COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS income,
-         COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS expense
-       FROM transactions
-       WHERE date >= ?`,
+      `SELECT t.type AS type, t.amount AS amount, a.currency AS currency
+       FROM transactions t
+       JOIN accounts a ON a.id = t.account_id
+       WHERE t.date >= ? AND t.type IN ('income', 'expense')`,
     )
-    .get(threeMonthsAgo) as unknown as { income: number; expense: number };
-  return (row.income - row.expense) / 3;
+    .all(threeMonthsAgo) as unknown as { type: "income" | "expense"; amount: number; currency: string }[];
+
+  let income = 0;
+  let expense = 0;
+  for (const row of rows) {
+    const converted = convert(row.amount, row.currency, targetCurrency);
+    if (row.type === "income") income += converted;
+    else expense += converted;
+  }
+  return (income - expense) / 3;
 }
 
 function toDto(row: GoalRow): GoalDto {
@@ -69,7 +80,7 @@ function toDto(row: GoalRow): GoalDto {
 
   let monthlyRate = monthlyNetInflow(row.linked_account_id);
   if (monthlyRate <= 0) {
-    monthlyRate = overallMonthlySavingsRate();
+    monthlyRate = overallMonthlySavingsRate(account.currency);
   }
 
   let projectedCompletionDate: string | null = null;
@@ -85,6 +96,7 @@ function toDto(row: GoalRow): GoalDto {
     id: row.id,
     name: row.name,
     targetAmount: row.target_amount,
+    currency: account.currency,
     targetDate: row.target_date,
     linkedAccountId: row.linked_account_id,
     linkedAccountName: account.name,

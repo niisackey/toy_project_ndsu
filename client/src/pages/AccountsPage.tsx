@@ -16,6 +16,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { useAccounts } from "../hooks/useAccounts";
+import { CURRENCIES } from "../lib/currency";
 import type { AccountType } from "../types";
 
 const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [
@@ -31,6 +32,7 @@ export default function AccountsPage() {
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType>("checking");
   const [initialBalance, setInitialBalance] = useState("0");
+  const [currency, setCurrency] = useState("USD");
   const [creditLimit, setCreditLimit] = useState("");
   const [nextStatementClosingDate, setNextStatementClosingDate] = useState("");
   const [nextPaymentDueDate, setNextPaymentDueDate] = useState("");
@@ -40,6 +42,7 @@ export default function AccountsPage() {
     setName("");
     setType("checking");
     setInitialBalance("0");
+    setCurrency("USD");
     setCreditLimit("");
     setNextStatementClosingDate("");
     setNextPaymentDueDate("");
@@ -53,6 +56,7 @@ export default function AccountsPage() {
         name,
         type,
         initialBalance: Number(initialBalance),
+        currency,
         creditLimit: type === "credit_card" ? Number(creditLimit) || 0 : null,
         nextStatementClosingDate:
           type === "credit_card" && nextStatementClosingDate ? nextStatementClosingDate : null,
@@ -123,6 +127,21 @@ export default function AccountsPage() {
                   value={initialBalance}
                   onChange={(e) => setInitialBalance(e.target.value)}
                 />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="currency">Currency</Label>
+                <Select value={currency} onValueChange={setCurrency}>
+                  <SelectTrigger id="currency">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.code} - {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               {type === "credit_card" && (
                 <>

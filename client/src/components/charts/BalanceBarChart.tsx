@@ -1,9 +1,16 @@
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 import type { BalancesOverviewEntry } from "../../types";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "../ui/chart";
+import { formatMoney } from "../../lib/currency";
 import { CATEGORICAL } from "./chartColors";
 
-export function BalanceBarChart({ data }: { data: BalancesOverviewEntry[] }) {
+export function BalanceBarChart({
+  data,
+  currency = "USD",
+}: {
+  data: BalancesOverviewEntry[];
+  currency?: string;
+}) {
   if (data.length === 0) {
     return <p className="empty-state">No accounts yet.</p>;
   }
@@ -20,9 +27,9 @@ export function BalanceBarChart({ data }: { data: BalancesOverviewEntry[] }) {
         <YAxis tickLine={false} axisLine={false} tickMargin={8} fontSize={12} width={56} />
         <ChartTooltip
           cursor={{ fill: "hsl(var(--muted))" }}
-          content={<ChartTooltipContent formatter={(v) => `$${Number(v).toFixed(2)}`} />}
+          content={<ChartTooltipContent formatter={(v) => formatMoney(Number(v), currency)} />}
         />
-        <Bar dataKey="balance" radius={[6, 6, 0, 0]} maxBarSize={56}>
+        <Bar dataKey="balanceInBaseCurrency" radius={[6, 6, 0, 0]} maxBarSize={56}>
           {data.map((entry, i) => (
             <Cell key={entry.accountId} fill={CATEGORICAL[i % CATEGORICAL.length]} />
           ))}

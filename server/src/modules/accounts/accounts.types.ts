@@ -5,6 +5,7 @@ export interface AccountRow {
   name: string;
   type: AccountType;
   initial_balance: number;
+  currency: string;
   credit_limit: number | null;
   next_statement_closing_date: string | null;
   next_payment_due_date: string | null;
@@ -16,6 +17,7 @@ export interface AccountDto {
   name: string;
   type: AccountType;
   initialBalance: number;
+  currency: string;
   creditLimit: number | null;
   balance: number;
   utilizationPct: number | null;

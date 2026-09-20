@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { listAccounts } from "../accounts/accounts.service";
 import { listBudgets } from "../budgets/budgets.service";
 import { computeCreditHealth } from "../credit/scoring";
+import { getBaseCurrency } from "../currency/currency.service";
 import { listGoals } from "../goals/goals.service";
 import { listRecurringRules } from "../recurring/recurring.service";
 import { spendingByCategory } from "../reports/reports.service";
@@ -11,10 +12,15 @@ export function buildFinancialSnapshot() {
   const today = format(new Date(), "yyyy-MM-dd");
   const currentMonth = format(new Date(), "yyyy-MM");
   const lastMonth = format(new Date(new Date().setMonth(new Date().getMonth() - 1)), "yyyy-MM");
+  const baseCurrency = getBaseCurrency();
 
-  const accounts = listAccounts().map((a) => ({
+  const allAccounts = listAccounts();
+  const accountCurrency = new Map(allAccounts.map((a) => [a.id, a.currency]));
+
+  const accounts = allAccounts.map((a) => ({
     name: a.name,
     type: a.type,
+    currency: a.currency,
     balance: a.balance,
     creditLimit: a.creditLimit,
     utilizationPct: a.utilizationPct,
@@ -31,6 +37,7 @@ export function buildFinancialSnapshot() {
   const goals = listGoals().map((g) => ({
     name: g.name,
     targetAmount: g.targetAmount,
+    currency: g.currency,
     currentAmount: g.currentAmount,
     progressPct: g.progressPct,
     targetDate: g.targetDate,
@@ -42,6 +49,7 @@ export function buildFinancialSnapshot() {
     name: r.name,
     type: r.type,
     amount: r.amount,
+    currency: accountCurrency.get(r.accountId) ?? "USD",
     frequency: r.frequency,
     nextDueDate: r.nextDueDate,
     active: r.active,
@@ -57,6 +65,8 @@ export function buildFinancialSnapshot() {
 
   return {
     today,
+    baseCurrency,
+    note: "amounts in accounts/goals/recurringBillsAndIncome are in each item's own currency (see its currency field); spendingByCategory*, budgets, totalIncomeLast3Months, and incomeSourcesLast3Months are already converted into baseCurrency",
     accounts,
     spendingByCategoryThisMonth: spendingByCategory(currentMonth),
     spendingByCategoryLastMonth: spendingByCategory(lastMonth),

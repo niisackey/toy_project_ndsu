@@ -1,8 +1,10 @@
 import { format, parseISO, subMonths } from "date-fns";
 import { db } from "../../db/connection";
 import { daysUntil } from "../../shared/dates";
+import { formatMoney } from "../../shared/money";
 import { listAccounts } from "../accounts/accounts.service";
 import { listBudgets } from "../budgets/budgets.service";
+import { convert, getBaseCurrency } from "../currency/currency.service";
 import { listGoals } from "../goals/goals.service";
 import { listRecurringRules } from "../recurring/recurring.service";
 
@@ -24,28 +26,43 @@ function previousMonth(): string {
 
 function spendingTrendInsights(): Insight[] {
   const insights: Insight[] = [];
+  const baseCurrency = getBaseCurrency();
+  const current = currentMonth();
+  const previous = previousMonth();
   const rows = db
     .prepare(
-      `SELECT c.name AS categoryName,
-         COALESCE(SUM(CASE WHEN substr(t.date,1,7) = ? THEN t.amount END), 0) AS current,
-         COALESCE(SUM(CASE WHEN substr(t.date,1,7) = ? THEN t.amount END), 0) AS previous
+      `SELECT c.id AS categoryId, c.name AS categoryName, t.amount AS amount, t.date AS date, a.currency AS currency
        FROM categories c
        LEFT JOIN transactions t ON t.category_id = c.id AND t.type = 'expense'
-       GROUP BY c.id, c.name`,
+       LEFT JOIN accounts a ON a.id = t.account_id`,
     )
-    .all(currentMonth(), previousMonth()) as unknown as {
+    .all() as unknown as {
+    categoryId: number;
     categoryName: string;
-    current: number;
-    previous: number;
+    amount: number | null;
+    date: string | null;
+    currency: string | null;
   }[];
 
+  const totals = new Map<number, { categoryName: string; current: number; previous: number }>();
   for (const row of rows) {
-    if (row.previous > 0 && row.current > row.previous * 1.2) {
-      const pctIncrease = Math.round(((row.current - row.previous) / row.previous) * 100);
+    if (!row.date || row.amount === null || !row.currency) continue;
+    const month = row.date.slice(0, 7);
+    if (month !== current && month !== previous) continue;
+    const entry = totals.get(row.categoryId) ?? { categoryName: row.categoryName, current: 0, previous: 0 };
+    const converted = convert(row.amount, row.currency, baseCurrency);
+    if (month === current) entry.current += converted;
+    else entry.previous += converted;
+    totals.set(row.categoryId, entry);
+  }
+
+  for (const { categoryName, current: cur, previous: prev } of totals.values()) {
+    if (prev > 0 && cur > prev * 1.2) {
+      const pctIncrease = Math.round(((cur - prev) / prev) * 100);
       insights.push({
         type: "warning",
         category: "spending",
-        message: `Your ${row.categoryName} spending is up ${pctIncrease}% vs last month ($${row.current.toFixed(2)} vs $${row.previous.toFixed(2)}).`,
+        message: `Your ${categoryName} spending is up ${pctIncrease}% vs last month (${formatMoney(cur, baseCurrency)} vs ${formatMoney(prev, baseCurrency)}).`,
       });
     }
   }
@@ -53,13 +70,14 @@ function spendingTrendInsights(): Insight[] {
 }
 
 function budgetOverrunInsights(): Insight[] {
+  const baseCurrency = getBaseCurrency();
   const budgets = listBudgets(currentMonth());
   return budgets
     .filter((b) => b.spent > b.limitAmount)
     .map((b) => ({
       type: "warning" as const,
       category: "budget",
-      message: `You've spent $${b.spent.toFixed(2)} on ${b.categoryName}, over your $${b.limitAmount.toFixed(2)} budget for this month.`,
+      message: `You've spent ${formatMoney(b.spent, baseCurrency)} on ${b.categoryName}, over your ${formatMoney(b.limitAmount, baseCurrency)} budget for this month.`,
     }));
 }
 
@@ -87,28 +105,47 @@ function creditUtilizationInsights(): Insight[] {
 
 export function incomeBySourceLast3Months(): { description: string | null; total: number }[] {
   const threeMonthsAgo = format(subMonths(new Date(), 3), "yyyy-MM-dd");
-  return db
+  const baseCurrency = getBaseCurrency();
+  const rows = db
     .prepare(
-      `SELECT description, SUM(amount) AS total FROM transactions
-       WHERE type = 'income' AND date >= ?
-       GROUP BY description
-       ORDER BY total DESC`,
+      `SELECT t.description AS description, t.amount AS amount, a.currency AS currency
+       FROM transactions t
+       JOIN accounts a ON a.id = t.account_id
+       WHERE t.type = 'income' AND t.date >= ?`,
     )
-    .all(threeMonthsAgo) as unknown as { description: string | null; total: number }[];
+    .all(threeMonthsAgo) as unknown as { description: string | null; amount: number; currency: string }[];
+
+  const totals = new Map<string | null, number>();
+  for (const row of rows) {
+    const converted = convert(row.amount, row.currency, baseCurrency);
+    totals.set(row.description, (totals.get(row.description) ?? 0) + converted);
+  }
+  return Array.from(totals.entries())
+    .map(([description, total]) => ({ description, total }))
+    .sort((a, b) => b.total - a.total);
 }
 
 export function savingsRateLast3Months(): { income: number; expense: number; rate: number } {
   const threeMonthsAgo = format(subMonths(new Date(), 3), "yyyy-MM-dd");
-  const row = db
+  const baseCurrency = getBaseCurrency();
+  const rows = db
     .prepare(
-      `SELECT
-         COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS income,
-         COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS expense
-       FROM transactions WHERE date >= ?`,
+      `SELECT t.type AS type, t.amount AS amount, a.currency AS currency
+       FROM transactions t
+       JOIN accounts a ON a.id = t.account_id
+       WHERE t.date >= ? AND t.type IN ('income', 'expense')`,
     )
-    .get(threeMonthsAgo) as unknown as { income: number; expense: number };
-  const rate = row.income > 0 ? (row.income - row.expense) / row.income : 0;
-  return { income: row.income, expense: row.expense, rate };
+    .all(threeMonthsAgo) as unknown as { type: "income" | "expense"; amount: number; currency: string }[];
+
+  let income = 0;
+  let expense = 0;
+  for (const row of rows) {
+    const converted = convert(row.amount, row.currency, baseCurrency);
+    if (row.type === "income") income += converted;
+    else expense += converted;
+  }
+  const rate = income > 0 ? (income - expense) / income : 0;
+  return { income, expense, rate };
 }
 
 function incomeDiversificationInsights(): Insight[] {
@@ -167,15 +204,18 @@ const UPCOMING_WINDOW_DAYS = 5;
 
 function upcomingRecurringDueInsights(): Insight[] {
   const insights: Insight[] = [];
+  const accountCurrency = new Map(listAccounts().map((a) => [a.id, a.currency]));
   for (const rule of listRecurringRules()) {
     if (!rule.active) continue;
     const days = daysUntil(rule.nextDueDate);
     if (days >= 0 && days <= UPCOMING_WINDOW_DAYS) {
       const when = days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`;
+      const currency = accountCurrency.get(rule.accountId) ?? "USD";
+      const signedAmount = `${rule.type === "expense" ? "-" : "+"}${formatMoney(rule.amount, currency)}`;
       insights.push({
         type: "tip",
         category: "upcoming",
-        message: `${rule.name} (${rule.type === "expense" ? "-" : "+"}$${rule.amount.toFixed(2)}) is due ${when}, on ${rule.nextDueDate}.`,
+        message: `${rule.name} (${signedAmount}) is due ${when}, on ${rule.nextDueDate}.`,
       });
     }
   }
@@ -193,7 +233,7 @@ function creditCardDueDateInsights(): Insight[] {
         insights.push({
           type: days <= 2 ? "warning" : "tip",
           category: "credit",
-          message: `${a.name}'s payment of $${a.balance.toFixed(2)} is due ${when} (${a.nextPaymentDueDate}) - a missed due date is one of the fastest ways to hurt your credit score.`,
+          message: `${a.name}'s payment of ${formatMoney(a.balance, a.currency)} is due ${when} (${a.nextPaymentDueDate}) - a missed due date is one of the fastest ways to hurt your credit score.`,
         });
       }
     }
@@ -234,7 +274,7 @@ function goalPacingInsights(): Insight[] {
       insights.push({
         type: "tip",
         category: "goals",
-        message: `To hit "${goal.name}" ($${goal.targetAmount}) by ${goal.targetDate}, try saving about $${shortfall.toFixed(2)} more per month than your recent average.`,
+        message: `To hit "${goal.name}" (${formatMoney(goal.targetAmount, goal.currency)}) by ${goal.targetDate}, try saving about ${formatMoney(shortfall, goal.currency)} more per month than your recent average.`,
       });
     } else {
       insights.push({

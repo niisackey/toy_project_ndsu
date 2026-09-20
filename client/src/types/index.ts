@@ -5,6 +5,7 @@ export interface Account {
   name: string;
   type: AccountType;
   initialBalance: number;
+  currency: string;
   creditLimit: number | null;
   balance: number;
   utilizationPct: number | null;
@@ -23,6 +24,7 @@ export interface Transaction {
   description: string | null;
   accountId: number;
   transferToAccountId: number | null;
+  transferAmountConverted: number | null;
   categoryId: number | null;
   recurringRuleId: number | null;
   createdAt: string;
@@ -70,6 +72,7 @@ export interface Goal {
   id: number;
   name: string;
   targetAmount: number;
+  currency: string;
   targetDate: string | null;
   linkedAccountId: number;
   linkedAccountName: string;
@@ -91,6 +94,7 @@ export interface CreditFactor {
 export interface CardUtilization {
   accountId: number;
   accountName: string;
+  currency: string;
   balance: number;
   creditLimit: number;
   utilizationPct: number;
@@ -152,6 +156,42 @@ export interface BalancesOverviewEntry {
   accountId: number;
   accountName: string;
   type: string;
+  currency: string;
   balance: number;
+  balanceInBaseCurrency: number;
   utilizationPct: number | null;
+}
+
+export interface RatesSummary {
+  baseCurrency: string;
+  lastFetchedAt: string | null;
+  rates: { currency: string; rateToUsd: number; live: boolean }[];
+}
+
+export type DebtDirection = "lent" | "borrowed";
+export type DebtStatus = "open" | "paid";
+
+export interface DebtPayment {
+  id: number;
+  amount: number;
+  date: string;
+}
+
+export interface Debt {
+  id: number;
+  direction: DebtDirection;
+  personName: string;
+  principalAmount: number;
+  currency: string;
+  accountId: number;
+  accountName: string;
+  description: string | null;
+  date: string;
+  dueDate: string | null;
+  status: DebtStatus;
+  settledAt: string | null;
+  paidAmount: number;
+  remainingAmount: number;
+  payments: DebtPayment[];
+  createdAt: string;
 }
