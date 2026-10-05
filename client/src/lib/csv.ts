@@ -25,6 +25,8 @@ export function downloadCsv(filename: string, csvText: string): void {
   anchor.click();
   document.body.removeChild(anchor);
   URL.revokeObjectURL(url);
+}
+
 // Parses CSV text into rows of string cells, handling quoted fields
 // (including embedded commas and escaped "" quotes).
 export function parseCsv(text: string): string[][] {
