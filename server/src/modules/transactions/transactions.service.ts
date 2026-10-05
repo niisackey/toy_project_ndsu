@@ -1,5 +1,6 @@
 import { db } from "../../db/connection";
 import { BadRequestError, NotFoundError } from "../../shared/errors";
+import { matchCategoryRule } from "../categoryRules/categoryRules.service";
 import { convert } from "../currency/currency.service";
 import type { TransactionDto, TransactionRow, TransactionType } from "./transactions.types";
 
@@ -100,6 +101,12 @@ function computeTransferAmountConverted(input: CreateTransactionInput): number |
   return convert(input.amount, fromCurrency, toCurrency);
 }
 
+function resolveCategoryId(input: CreateTransactionInput): number | null {
+  if (input.categoryId !== undefined && input.categoryId !== null) return input.categoryId;
+  if (input.type === "transfer" || !input.description) return input.categoryId ?? null;
+  return matchCategoryRule(input.description);
+}
+
 function validateInput(input: CreateTransactionInput): void {
   assertAccountExists(input.accountId);
   if (input.type === "transfer") {
@@ -116,6 +123,7 @@ function validateInput(input: CreateTransactionInput): void {
 export function createTransaction(input: CreateTransactionInput): TransactionDto {
   validateInput(input);
   const transferAmountConverted = computeTransferAmountConverted(input);
+  const categoryId = resolveCategoryId(input);
   const result = db
     .prepare(
       `INSERT INTO transactions (type, amount, date, description, account_id, transfer_to_account_id, transfer_amount_converted, category_id, recurring_rule_id)
@@ -129,10 +137,48 @@ export function createTransaction(input: CreateTransactionInput): TransactionDto
       input.accountId,
       input.type === "transfer" ? (input.transferToAccountId ?? null) : null,
       input.type === "transfer" ? transferAmountConverted : null,
-      input.categoryId ?? null,
+      categoryId,
       input.recurringRuleId ?? null,
     );
   return getTransaction(Number(result.lastInsertRowid));
+}
+
+export interface ImportRow {
+  date: string;
+  description?: string | null;
+  amount: number;
+}
+
+export interface ImportResult {
+  importedCount: number;
+  categorizedCount: number;
+}
+
+// amount is signed, as in a standard bank CSV export: negative = expense, positive = income
+export function bulkImportTransactions(accountId: number, rows: ImportRow[]): ImportResult {
+  assertAccountExists(accountId);
+  let importedCount = 0;
+  let categorizedCount = 0;
+  db.exec("BEGIN");
+  try {
+    for (const row of rows) {
+      if (row.amount === 0) continue;
+      const transaction = createTransaction({
+        type: row.amount > 0 ? "income" : "expense",
+        amount: Math.abs(row.amount),
+        date: row.date,
+        description: row.description ?? null,
+        accountId,
+      });
+      importedCount += 1;
+      if (transaction.categoryId !== null) categorizedCount += 1;
+    }
+    db.exec("COMMIT");
+  } catch (err) {
+    db.exec("ROLLBACK");
+    throw err;
+  }
+  return { importedCount, categorizedCount };
 }
 
 export function updateTransaction(

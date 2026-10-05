@@ -40,3 +40,19 @@ export async function updateTransaction(
 export async function deleteTransaction(id: number): Promise<void> {
   await apiClient.delete(`/transactions/${id}`);
 }
+
+export interface ImportRow {
+  date: string;
+  description?: string | null;
+  amount: number;
+}
+
+export interface ImportResult {
+  importedCount: number;
+  categorizedCount: number;
+}
+
+export async function importTransactions(accountId: number, rows: ImportRow[]): Promise<ImportResult> {
+  const { data } = await apiClient.post<ImportResult>("/transactions/import", { accountId, rows });
+  return data;
+}

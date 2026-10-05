@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { Download, Plus, Search, Trash2 } from "lucide-react";
 import { createTransaction, deleteTransaction } from "../api/transactions";
 import { PageLayout } from "../components/layout/PageLayout";
+import { ImportCsvDialog } from "../components/transactions/ImportCsvDialog";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { downloadCsv, toCsv } from "../lib/csv";
@@ -131,6 +132,7 @@ export default function TransactionsPage() {
         <Button variant="outline" onClick={handleExportCsv} disabled={filteredTransactions.length === 0}>
           <Download size={16} /> Export CSV
         </Button>
+        <ImportCsvDialog accounts={accounts} onImported={refresh} />
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>

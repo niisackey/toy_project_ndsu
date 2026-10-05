@@ -18,6 +18,19 @@ const transactionSchema = z.object({
 
 const transactionUpdateSchema = transactionSchema.partial();
 
+const importSchema = z.object({
+  accountId: z.number().int(),
+  rows: z
+    .array(
+      z.object({
+        date: z.string().min(1),
+        description: z.string().nullable().optional(),
+        amount: z.number(),
+      }),
+    )
+    .min(1),
+});
+
 function parseFilters(query: Record<string, unknown>): transactionsService.TransactionFilters {
   const type = query.type;
   return {
@@ -48,6 +61,14 @@ transactionsRouter.post(
   asyncHandler(async (req, res) => {
     const input = transactionSchema.parse(req.body);
     res.status(201).json(transactionsService.createTransaction(input));
+  }),
+);
+
+transactionsRouter.post(
+  "/import",
+  asyncHandler(async (req, res) => {
+    const input = importSchema.parse(req.body);
+    res.status(201).json(transactionsService.bulkImportTransactions(input.accountId, input.rows));
   }),
 );
 
