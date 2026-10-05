@@ -143,6 +143,44 @@ export function createTransaction(input: CreateTransactionInput): TransactionDto
   return getTransaction(Number(result.lastInsertRowid));
 }
 
+export interface ImportRow {
+  date: string;
+  description?: string | null;
+  amount: number;
+}
+
+export interface ImportResult {
+  importedCount: number;
+  categorizedCount: number;
+}
+
+// amount is signed, as in a standard bank CSV export: negative = expense, positive = income
+export function bulkImportTransactions(accountId: number, rows: ImportRow[]): ImportResult {
+  assertAccountExists(accountId);
+  let importedCount = 0;
+  let categorizedCount = 0;
+  db.exec("BEGIN");
+  try {
+    for (const row of rows) {
+      if (row.amount === 0) continue;
+      const transaction = createTransaction({
+        type: row.amount > 0 ? "income" : "expense",
+        amount: Math.abs(row.amount),
+        date: row.date,
+        description: row.description ?? null,
+        accountId,
+      });
+      importedCount += 1;
+      if (transaction.categoryId !== null) categorizedCount += 1;
+    }
+    db.exec("COMMIT");
+  } catch (err) {
+    db.exec("ROLLBACK");
+    throw err;
+  }
+  return { importedCount, categorizedCount };
+}
+
 export function updateTransaction(
   id: number,
   input: Partial<CreateTransactionInput>,
