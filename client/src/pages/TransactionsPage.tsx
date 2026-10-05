@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { format } from "date-fns";
-import { Plus, Search, Trash2 } from "lucide-react";
+import { Download, Plus, Search, Trash2 } from "lucide-react";
 import { createTransaction, deleteTransaction } from "../api/transactions";
 import { PageLayout } from "../components/layout/PageLayout";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { downloadCsv, toCsv } from "../lib/csv";
 import {
   Dialog,
   DialogContent,
@@ -108,11 +109,28 @@ export default function TransactionsPage() {
     await refresh();
   }
 
+  function handleExportCsv() {
+    const csv = toCsv(filteredTransactions, [
+      { header: "Date", value: (t) => t.date },
+      { header: "Type", value: (t) => t.type },
+      { header: "Description", value: (t) => t.description ?? "" },
+      { header: "Account", value: (t) => accountName(t.accountId) },
+      { header: "Category", value: (t) => categoryName(t.categoryId) },
+      { header: "Amount", value: (t) => t.amount },
+      { header: "Currency", value: (t) => accountCurrency(t.accountId) },
+    ]);
+    downloadCsv(`transactions-${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
+  }
+
   return (
     <PageLayout
       title="Transactions"
       subtitle="Log income, expenses, and transfers between accounts"
       actions={
+        <>
+        <Button variant="outline" onClick={handleExportCsv} disabled={filteredTransactions.length === 0}>
+          <Download size={16} /> Export CSV
+        </Button>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -220,6 +238,7 @@ export default function TransactionsPage() {
             </form>
           </DialogContent>
         </Dialog>
+        </>
       }
     >
       <div className="mb-4 flex flex-wrap items-center gap-2.5">
