@@ -4,6 +4,7 @@ import { Toaster } from "./components/ui/toaster";
 import { ToastProvider } from "./hooks/use-toast";
 import AccountsPage from "./pages/AccountsPage";
 import BudgetsPage from "./pages/BudgetsPage";
+import CategoryRulesPage from "./pages/CategoryRulesPage";
 import CreditHealthPage from "./pages/CreditHealthPage";
 import DashboardPage from "./pages/DashboardPage";
 import DebtsPage from "./pages/DebtsPage";
@@ -24,6 +25,7 @@ export default function App() {
             <Route path="/accounts" element={<AccountsPage />} />
             <Route path="/transactions" element={<TransactionsPage />} />
             <Route path="/budgets" element={<BudgetsPage />} />
+            <Route path="/category-rules" element={<CategoryRulesPage />} />
             <Route path="/recurring" element={<RecurringPage />} />
             <Route path="/goals" element={<GoalsPage />} />
             <Route path="/debts" element={<DebtsPage />} />

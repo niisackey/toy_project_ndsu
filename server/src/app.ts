@@ -6,6 +6,7 @@ import path from "node:path";
 import { accountsRouter } from "./modules/accounts/accounts.routes";
 import { budgetsRouter } from "./modules/budgets/budgets.routes";
 import { categoriesRouter } from "./modules/categories/categories.routes";
+import { categoryRulesRouter } from "./modules/categoryRules/categoryRules.routes";
 import { creditRouter } from "./modules/credit/credit.routes";
 import { currencyRouter } from "./modules/currency/currency.routes";
 import { debtsRouter } from "./modules/debts/debts.routes";
@@ -38,6 +39,7 @@ export function createApp(): Express {
   app.use("/api/insights", insightsRouter);
   app.use("/api/currency", currencyRouter);
   app.use("/api/debts", debtsRouter);
+  app.use("/api/category-rules", categoryRulesRouter);
 
   const clientDist = path.join(__dirname, "../../client/dist");
   if (fs.existsSync(path.join(clientDist, "index.html"))) {
