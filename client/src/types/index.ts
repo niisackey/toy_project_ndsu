@@ -195,3 +195,11 @@ export interface Debt {
   payments: DebtPayment[];
   createdAt: string;
 }
+
+export interface CategoryRule {
+  id: number;
+  keyword: string;
+  categoryId: number;
+  categoryName: string;
+  createdAt: string;
+}

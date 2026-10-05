@@ -47,5 +47,13 @@ export function deleteCategory(id: number): void {
       "Cannot delete a category that has transactions. Reassign or delete them first.",
     );
   }
+  const ruleCount = db
+    .prepare(`SELECT COUNT(*) AS count FROM category_rules WHERE category_id = ?`)
+    .get(id) as unknown as { count: number };
+  if (ruleCount.count > 0) {
+    throw new ConflictError(
+      "Cannot delete a category that has auto-categorization rules. Delete those rules first.",
+    );
+  }
   db.prepare(`DELETE FROM categories WHERE id = ?`).run(id);
 }

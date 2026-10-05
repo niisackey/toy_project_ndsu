@@ -25,6 +25,7 @@ function clearAll(): void {
     DELETE FROM budgets;
     DELETE FROM debt_payments;
     DELETE FROM debts;
+    DELETE FROM category_rules;
     DELETE FROM transactions;
     DELETE FROM recurring_rules;
     DELETE FROM categories;
@@ -94,6 +95,14 @@ function seedDatabase(): void {
       textbooks: Number(insertCategory.run("Textbooks/Supplies", "📚").lastInsertRowid),
       subscriptions: Number(insertCategory.run("Subscriptions", "📱").lastInsertRowid),
     };
+
+    const insertCategoryRule = db.prepare(
+      `INSERT INTO category_rules (keyword, category_id) VALUES (?, ?)`,
+    );
+    insertCategoryRule.run("netflix", categories.subscriptions);
+    insertCategoryRule.run("spotify", categories.subscriptions);
+    insertCategoryRule.run("uber", categories.transportation);
+    insertCategoryRule.run("starbucks", categories.dining);
 
     const insertTx = db.prepare(
       `INSERT INTO transactions (type, amount, date, description, account_id, transfer_to_account_id, category_id)
