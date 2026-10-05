@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { Plus, Search, Trash2 } from "lucide-react";
 import { createTransaction, deleteTransaction } from "../api/transactions";
 import { PageLayout } from "../components/layout/PageLayout";
+import { ImportCsvDialog } from "../components/transactions/ImportCsvDialog";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import {
@@ -113,6 +114,8 @@ export default function TransactionsPage() {
       title="Transactions"
       subtitle="Log income, expenses, and transfers between accounts"
       actions={
+        <>
+        <ImportCsvDialog accounts={accounts} onImported={refresh} />
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -220,6 +223,7 @@ export default function TransactionsPage() {
             </form>
           </DialogContent>
         </Dialog>
+        </>
       }
     >
       <div className="mb-4 flex flex-wrap items-center gap-2.5">
