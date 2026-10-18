@@ -9,7 +9,7 @@ export function nextOccurrenceOfDay(day: number, from: Date = new Date()): strin
   today.setHours(0, 0, 0, 0);
   if (candidate < today) {
     const nextMonth = addMonths(from, 1);
-    const clampedNextMonth = Math.min(day, getDaysInMonth(nextMonth));
+    const clampedNextMonth = Math.min(day, getDaysInMonth(nextMonth) - 1);
     candidate = setDate(nextMonth, clampedNextMonth);
   }
   return format(candidate, "yyyy-MM-dd");
